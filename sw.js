@@ -1,9 +1,9 @@
-const CACHE_NAME = 'kauekids-cache-v3'; 
+const CACHE_NAME = 'kauekids-cache-v4'; 
 const assets = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/imagem.png'
+  '/image.png'
 ];
 
 self.addEventListener('install', event => {
