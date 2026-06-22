@@ -4,16 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KauêKids - Sistema União de Parques Pro</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- SDK do Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-slate-50 font-sans text-gray-800 antialiased">
 
-    <!-- BARRA DE NAVEGAÇÃO -->
     <nav class="bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16">
@@ -31,10 +27,8 @@
         </div>
     </nav>
 
-    <!-- CONTEÚDO DINÂMICO DAS TELAS -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         
-        <!-- ================= TELA 1: SELEÇÃO DE MODO (HOME INICIAL) ================= -->
         <section id="tela-selecao" class="hidden max-w-xl mx-auto py-12 space-y-8">
             <div class="text-center">
                 <h1 class="text-3xl font-black text-gray-900 tracking-tight">Bem-vindo ao KauêKids</h1>
@@ -42,7 +36,6 @@
             </div>
             
             <div class="grid grid-cols-1 gap-4">
-                <!-- Acesso Admin -->
                 <button onclick="pedirSenhaAdmin()" class="bg-white hover:border-orange-500 border-2 border-gray-100 p-6 rounded-3xl shadow-sm text-left transition flex items-center space-x-4 group">
                     <div class="p-4 bg-orange-100 text-orange-600 rounded-2xl group-hover:bg-orange-500 group-hover:text-white transition"><i data-lucide="shield-check" class="w-6 h-6"></i></div>
                     <div>
@@ -57,17 +50,13 @@
                     <div class="flex-grow border-t border-gray-200"></div>
                 </div>
 
-                <!-- Lista Dinâmica de Brinquedos gerada pelo Banco -->
                 <div id="lista-brinquedos-home" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <!-- Gerado via JavaScript -->
-                </div>
+                    </div>
             </div>
         </section>
 
-        <!-- ================= TELA 2: OPERAÇÃO EXCLUSIVA DO BRINQUEDO ================= -->
         <section id="tela-operador" class="hidden space-y-6">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- FORMULÁRIO DE ENTRADA -->
                 <div class="bg-white p-6 rounded-3xl shadow-sm border border-orange-100 h-fit">
                     <div class="flex items-center space-x-2 mb-6">
                         <i data-lucide="user-plus" class="text-orange-500 w-5 h-5"></i>
@@ -113,7 +102,6 @@
                     </form>
                 </div>
                 
-                <!-- MONITOR FILTRADO -->
                 <div class="lg:col-span-2 space-y-4">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center space-x-2">
@@ -133,11 +121,9 @@
             </div>
         </section>
 
-        <!-- ================= TELA 3: PAINEL ADMINISTRATIVO ISOLADO ================= -->
         <section id="tela-admin" class="hidden space-y-6">
             <h2 class="text-2xl font-black text-gray-900">Painel do Administrador Geral</h2>
             
-            <!-- DETALHAMENTO DE RECEITA -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div class="bg-white p-5 rounded-3xl shadow-sm border border-emerald-100 flex items-center justify-between">
                     <div>
@@ -169,9 +155,7 @@
                 </div>
             </div>
 
-            <!-- ADICIONAR E VER FATURAMENTO POR BRINQUEDO -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- FORMULÁRIO DE GESTÃO DE BRINQUEDOS -->
                 <div class="bg-white p-6 rounded-3xl shadow-sm border border-purple-100 h-fit space-y-4">
                     <div class="flex items-center space-x-2">
                         <i data-lucide="plus-circle" class="text-purple-600 w-5 h-5"></i>
@@ -185,12 +169,10 @@
                     <div class="border-t border-gray-100 pt-3">
                         <span class="text-xs font-bold uppercase tracking-wider text-gray-400 block mb-2">Faturamento de Cada Um</span>
                         <div id="lista-faturamentos-brinquedos" class="space-y-2 text-sm">
-                            <!-- Inserido dinamicamente -->
-                        </div>
+                            </div>
                     </div>
                 </div>
 
-                <!-- HISTÓRICO GLOBAL -->
                 <div class="lg:col-span-2 bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="font-black text-gray-800 text-lg">Histórico Geral Unificado</h3>
@@ -257,8 +239,7 @@
                 sessoesAtivasLocal = data.filter(s => s.status === 'ativo');
                 historicoLocal = data.filter(s => s.status === 'finalizado');
 
-                // Garante o cálculo imediato ao carregar para não dar tela em branco
-                atualizarLógicaDeContagem(); 
+                atualizarLogicaDeContagem(); 
                 if (modoAtual === 'operador') renderCards();
                 if (modoAtual === 'admin') renderDashboard();
             } catch (err) {
@@ -269,7 +250,10 @@
         function inscreverNoRealtime() {
             _supabase
                 .channel('mudancas-parque')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'sessoes' }, () => carregarDadosDoBanco())
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'sessoes' }, async () => {
+                    // Quando houver mudança em tempo real, recarrega e recalcula tudo na hora
+                    await carregarDadosDoBanco();
+                })
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'brinquedos' }, () => carregarBrinquedos())
                 .subscribe();
         }
@@ -383,12 +367,11 @@
             }
         }
 
-        // CORREÇÃO CENTRAL: Lógica separada para processar os tempos milimetricamente
-        function atualizarLógicaDeContagem() {
+        function atualizarLogicaDeContagem() {
             const agora = new Date();
             sessoesAtivasLocal.forEach(sessao => {
-                // Força a interpretação correta da data UTC do Supabase convertendo para fuso local
-                const inicio = new Date(sessao.inicio_em);
+                // Força o parse seguro independente de como a string venha do realtime
+                const inicio = new Date(sessao.inicio_em.replace(' ', 'T'));
                 const tempoTotalSegundos = sessao.minutos_iniciais * 60;
                 const segundosPassados = Math.floor((agora - inicio) / 1000);
                 
@@ -398,7 +381,7 @@
         }
 
         function calcularTemposRegressivos() {
-            atualizarLógicaDeContagem();
+            atualizarLogicaDeContagem();
             if (modoAtual === 'operador') renderCards();
         }
 
@@ -429,9 +412,16 @@
             contadorAtivas.textContent = `${sessoesFiltradas.length} Ativas`;
 
             sessoesFiltradas.forEach(sessao => {
-                // Se ainda não passou pela contagem regressiva, calcula manualmente para o card não quebrar na hora de nascer
-                const tempoRestante = sessao.tempoRestanteCalculado !== undefined ? sessao.tempoRestanteCalculado : (sessao.minutos_iniciais * 60);
-                const porcetagemRestante = sessao.porcentagemCalculada !== undefined ? sessao.porcentagemCalculada : 100;
+                // Cálculo de emergência preventiva caso os segundos ainda estejam processando
+                let tempoRestante = sessao.tempoRestanteCalculado;
+                if (tempoRestante === undefined || isNaN(tempoRestante)) {
+                    const agora = new Date();
+                    const inicio = new Date(sessao.inicio_em.replace(' ', 'T'));
+                    const totalSegundos = sessao.minutos_iniciais * 60;
+                    tempoRestante = totalSegundos - Math.floor((agora - inicio) / 1000);
+                }
+                
+                let porcetagemRestante = sessao.porcentagemCalculada !== undefined && !isNaN(sessao.porcentagemCalculada) ? sessao.porcentagemCalculada : 100;
                 
                 let corBorda = "border-gray-200";
                 let corProgresso = "bg-orange-500";
@@ -478,7 +468,7 @@
 
         function renderDashboard() {
             const pix = historicoLocal.filter(s => s.pagamento === 'PIX').reduce((a, c) => a + parseFloat(c.valor), 0);
-            const dinheiro = historicoLocal.filter(s => s.pagamento === 'Dinheiro').reduce((a, c) => a + parseFloat(c.valor), 0);
+            const dinero = dinheiro = historicoLocal.filter(s => s.pagamento === 'Dinheiro').reduce((a, c) => a + parseFloat(c.valor), 0);
             const cartao = historicoLocal.filter(s => s.pagamento === 'Cartão').reduce((a, c) => a + parseFloat(c.valor), 0);
             const total = pix + dinheiro + cartao;
 
