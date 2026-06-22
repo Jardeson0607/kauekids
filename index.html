@@ -122,12 +122,21 @@
         </section>
 
         <section id="tela-admin" class="hidden space-y-6">
-            <h2 class="text-2xl font-black text-gray-900">Painel do Administrador Geral</h2>
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                    <h2 class="text-2xl font-black text-gray-900">Painel do Administrador Geral</h2>
+                    <p class="text-xs text-gray-500 mt-0.5">Clique em um brinquedo da lista para filtrar as estatísticas dele.</p>
+                </div>
+                <div id="container-filtro-ativo" class="hidden bg-orange-100 text-orange-800 font-bold text-xs px-3 py-1.5 rounded-xl border border-orange-200 flex items-center space-x-2 animate-fade-in">
+                    <span>Filtrado por: <span id="nome-filtro-ativo" class="font-black"></span></span>
+                    <button onclick="limparFiltroBrinquedoAdmin()" class="bg-orange-200 hover:bg-orange-300 rounded-md p-0.5 text-orange-900 transition"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+                </div>
+            </div>
             
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div class="bg-white p-5 rounded-3xl shadow-sm border border-emerald-100 flex items-center justify-between">
                     <div>
-                        <span class="block text-xs font-bold uppercase tracking-wider text-emerald-500">Caixa Geral</span>
+                        <span id="label-caixa-geral" class="block text-xs font-bold uppercase tracking-wider text-emerald-500">Caixa Geral</span>
                         <span id="dash-faturamento" class="text-2xl font-black text-gray-900 mt-1">R$ 0,00</span>
                     </div>
                     <div class="p-3 bg-emerald-50 rounded-2xl text-emerald-500"><i data-lucide="vault"></i></div>
@@ -167,7 +176,7 @@
                     </form>
                     
                     <div class="border-t border-gray-100 pt-3">
-                        <span class="text-xs font-bold uppercase tracking-wider text-gray-400 block mb-2">Faturamento de Cada Um</span>
+                        <span class="text-xs font-bold uppercase tracking-wider text-gray-400 block mb-2">Faturamento (Clique p/ filtrar)</span>
                         <div id="lista-faturamentos-brinquedos" class="space-y-2 text-sm">
                             </div>
                     </div>
@@ -175,7 +184,7 @@
 
                 <div class="lg:col-span-2 bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
                     <div class="flex items-center justify-between mb-4">
-                        <h3 class="font-black text-gray-800 text-lg">Histórico Geral Unificado</h3>
+                        <h3 id="titulo-historico-admin" class="font-black text-gray-800 text-lg">Histórico Geral Unificado</h3>
                         <span id="dash-atendimentos" class="bg-slate-100 text-slate-700 px-3 py-1 rounded-xl text-xs font-bold">0 Concluídos</span>
                     </div>
                     <div class="overflow-x-auto">
@@ -211,6 +220,9 @@
         let listaBrinquedosLocal = [];
         let modoAtual = 'selecao';
         let brinquedoOperador = '';
+        
+        // Estado do Filtro do Administrador
+        let brinquedoFiltradoAdmin = ''; 
 
         async function init() {
             lucide.createIcons();
@@ -237,18 +249,15 @@
                 const { data, error } = await _supabase.from('sessoes').select('*').order('created_at', { ascending: false });
                 if (error) throw error;
                 
-                // Evita sobrescrever o card recém-criado localmente se o banco demorar um pouquinho
                 const novasAtivas = data.filter(s => s.status === 'ativo');
                 
-                // Mescla os dados mantendo itens criados localmente com ID temporário se ainda não retornaram do banco
                 novasAtivas.forEach(sessaoBanco => {
                     const indexLocal = sessoesAtivasLocal.findIndex(s => s.nome === sessaoBanco.nome && s.brinquedo === sessaoBanco.brinquedo && s.minutos_iniciais === sessaoBanco.minutos_iniciais);
                     if (indexLocal !== -1 && String(sessoesAtivasLocal[indexLocal].id).startsWith('temp_')) {
-                        sessoesAtivasLocal[indexLocal] = sessaoBanco; // Substitui o temporário pelo oficial do banco
+                        sessoesAtivasLocal[indexLocal] = sessaoBanco;
                     }
                 });
 
-                // Atualiza a lista oficial com o que veio estável do banco de dados
                 sessoesAtivasLocal = novasAtivas.length > 0 ? novasAtivas : sessoesAtivasLocal;
                 historicoLocal = data.filter(s => s.status === 'finalizado');
 
@@ -339,6 +348,7 @@
             const senha = prompt("Digite a senha do Administrador:");
             if (senha === "admin123") {
                 modoAtual = 'admin';
+                brinquedoFiltradoAdmin = ''; // Começa sem filtros
                 renderizarTelaPorModo();
                 renderDashboard();
             } else {
@@ -349,10 +359,21 @@
         function logout() {
             modoAtual = 'selecao';
             brinquedoOperador = '';
+            brinquedoFiltradoAdmin = '';
             renderizarTelaPorModo();
         }
 
-        // CRIAÇÃO E RENDERIZAÇÃO INSTANTÂNEA LOCAL
+        // GERENCIAMENTO DE FILTRO ADMIN
+        function filtrarBrinquedoAdmin(nomeBrinquedo) {
+            brinquedoFiltradoAdmin = nomeBrinquedo;
+            renderDashboard();
+        }
+
+        function limparFiltroBrinquedoAdmin() {
+            brinquedoFiltradoAdmin = '';
+            renderDashboard();
+        }
+
         async function addCriança(event) {
             event.preventDefault();
             const nome = document.getElementById('nome-crianca').value;
@@ -361,7 +382,6 @@
             const pagamento = document.getElementById('pagamento').value;
             const isoDataLocal = new Date().toISOString();
 
-            // Cria um objeto temporário na memória do celular para renderizar na hora!
             const sessaoTemporaria = {
                 id: 'temp_' + Date.now(),
                 nome,
@@ -375,24 +395,16 @@
                 porcentagemCalculada: 100
             };
 
-            // Insere no início da lista local e redesenha a tela no mesmo milissegundo
             sessoesAtivasLocal.unshift(sessaoTemporaria);
             renderCards();
             document.getElementById('form-checkin').reset();
 
             try {
                 const { error } = await _supabase.from('sessoes').insert([{
-                    nome, 
-                    brinquedo: brinquedoOperador, 
-                    minutos_iniciais: minutos, 
-                    valor, 
-                    pagamento, 
-                    status: 'ativo',
-                    inicio_em: isoDataLocal
+                    nome, brinquedo: brinquedoOperador, minutos_iniciais: minutos, valor, pagamento, status: 'ativo', inicio_em: isoDataLocal
                 }]);
                 if (error) throw error;
             } catch (err) {
-                // Se der erro no servidor, remove o card temporário da tela
                 sessoesAtivasLocal = sessoesAtivasLocal.filter(s => s.id !== sessaoTemporaria.id);
                 renderCards();
                 alert("Erro ao sincronizar com o servidor: " + err.message);
@@ -400,7 +412,6 @@
         }
 
         async function finalizarSessao(id) {
-            // Remove visualmente de forma instantânea para dar agilidade ao operador
             sessoesAtivasLocal = sessoesAtivasLocal.filter(s => s.id !== id);
             renderCards();
 
@@ -512,9 +523,32 @@
         }
 
         function renderDashboard() {
-            const pix = historicoLocal.filter(s => s.pagamento === 'PIX').reduce((a, c) => a + parseFloat(c.valor), 0);
-            const dinheiro = historicoLocal.filter(s => s.pagamento === 'Dinheiro').reduce((a, c) => a + parseFloat(c.valor), 0);
-            const cartao = historicoLocal.filter(s => s.pagamento === 'Cartão').reduce((a, c) => a + parseFloat(c.valor), 0);
+            // Se houver um brinquedo filtrado, separa o histórico apenas dele
+            const historicoFiltrado = brinquedoFiltradoAdmin 
+                ? historicoLocal.filter(s => s.brinquedo === brinquedoFiltradoAdmin)
+                : historicoLocal;
+
+            // Altera elementos visuais do cabeçalho do filtro
+            const divFiltroInfo = document.getElementById('container-filtro-ativo');
+            const textoFiltroInfo = document.getElementById('nome-filtro-ativo');
+            const labelCaixaGeral = document.getElementById('label-caixa-geral');
+            const tituloHistorico = document.getElementById('titulo-historico-admin');
+
+            if (brinquedoFiltradoAdmin) {
+                divFiltroInfo.classList.remove('hidden');
+                textoFiltroInfo.textContent = brinquedoFiltradoAdmin;
+                labelCaixaGeral.textContent = `Total do Brinquedo`;
+                tituloHistorico.textContent = `Estatística — ${brinquedoFiltradoAdmin}`;
+            } else {
+                divFiltroInfo.classList.add('hidden');
+                labelCaixaGeral.textContent = `Caixa Geral`;
+                tituloHistorico.textContent = `Histórico Geral Unificado`;
+            }
+
+            // Calcula faturamento baseado no histórico filtrado (Geral ou por brinquedo)
+            const pix = historicoFiltrado.filter(s => s.pagamento === 'PIX').reduce((a, c) => a + parseFloat(c.valor), 0);
+            const dinheiro = historicoFiltrado.filter(s => s.pagamento === 'Dinheiro').reduce((a, c) => a + parseFloat(c.valor), 0);
+            const cartao = historicoFiltrado.filter(s => s.pagamento === 'Cartão').reduce((a, c) => a + parseFloat(c.valor), 0);
             const total = pix + dinheiro + cartao;
 
             document.getElementById('dash-faturamento').textContent = `R$ ${total.toFixed(2)}`;
@@ -522,26 +556,46 @@
             document.getElementById('dash-dinheiro').textContent = `R$ ${dinheiro.toFixed(2)}`;
             document.getElementById('dash-cartao').textContent = `R$ ${cartao.toFixed(2)}`;
 
+            // RENDERIZAÇÃO DA LISTA DA ESQUERDA COMO BOTÕES DE FILTRO DINÂMICO
             const containerFaturamentos = document.getElementById('lista-faturamentos-brinquedos');
             containerFaturamentos.innerHTML = '';
             
             listaBrinquedosLocal.forEach(b => {
                 const fat = historicoLocal.filter(s => s.brinquedo === b.nome).reduce((a, c) => a + parseFloat(c.valor), 0);
-                const div = document.createElement('div');
-                div.className = "flex justify-between items-center bg-gray-50 p-2.5 rounded-xl border border-gray-100";
-                div.innerHTML = `<span class="font-bold text-gray-700">${b.nome}</span> <span class="font-black text-slate-900">R$ ${fat.toFixed(2)}</span>`;
-                containerFaturamentos.appendChild(div);
+                
+                // Cria um botão clicável para acionar o filtro
+                const btnItem = document.createElement('button');
+                btnItem.type = "button";
+                btnItem.onclick = () => filtrarBrinquedoAdmin(b.nome);
+                
+                // Destaca visualmente se o brinquedo atual for o selecionado
+                const classeAtiva = brinquedoFiltradoAdmin === b.nome 
+                    ? "border-orange-500 bg-orange-50/50 text-orange-900 ring-2 ring-orange-200" 
+                    : "border-gray-100 bg-gray-50 text-gray-700 hover:border-orange-200 hover:bg-orange-50/30";
+                
+                btnItem.className = `w-full text-left flex justify-between items-center p-2.5 rounded-xl border transition ${classeAtiva} font-medium group`;
+                btnItem.innerHTML = `
+                    <span class="flex items-center space-x-1.5 font-bold">
+                        <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-gray-400 group-hover:text-orange-500 transition"></i>
+                        <span>${b.nome}</span>
+                    </span> 
+                    <span class="font-black text-slate-900 bg-white px-2 py-0.5 rounded-md shadow-2xs border border-gray-100">R$ ${fat.toFixed(2)}</span>
+                `;
+                containerFaturamentos.appendChild(btnItem);
             });
+
+            // ATUALIZA A TABELA DA DIREITA
+            document.getElementById('dash-atendimentos').textContent = `${historicoFiltrado.length} exibidos`;
 
             const corpoTabela = document.getElementById('historico-corpo');
             corpoTabela.innerHTML = '';
 
-            if (historicoLocal.length === 0) {
-                corpoTabela.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-gray-400 italic">Nenhum atendimento finalizado.</td></tr>`;
+            if (historicoFiltrado.length === 0) {
+                corpoTabela.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-gray-400 italic">Nenhum atendimento encontrado para esta seleção.</td></tr>`;
                 return;
             }
 
-            historicoLocal.forEach(item => {
+            historicoFiltrado.forEach(item => {
                 const tr = document.createElement('tr');
                 tr.className = "border-b border-gray-50 hover:bg-gray-50/50 transition text-gray-700";
                 tr.innerHTML = `
@@ -553,6 +607,7 @@
                 `;
                 corpoTabela.appendChild(tr);
             });
+            lucide.createIcons();
         }
 
         window.onload = init;
