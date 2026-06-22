@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KauêKids - Sistema de Parques</title>
+    <title>KauêKids - Sistema de Parques Realtime</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-amber-50/40 font-sans text-gray-800 antialiased">
 
@@ -104,7 +105,7 @@
                             <i data-lucide="hourglass" class="text-orange-500 w-5 h-5"></i>
                             <h2 class="text-lg font-black text-gray-900">Painel de Monitoramento</h2>
                         </div>
-                        <span id="contador-ativas" class="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-black">0 Ativas</span>
+                        <span id="contador-ativas" class="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-black">Carregando...</span>
                     </div>
                     
                     <div id="container-cronometros" class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -146,8 +147,8 @@
                 </div>
                 <div class="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex items-center justify-between">
                     <div>
-                        <span class="block text-xs font-bold uppercase tracking-wider text-gray-400">Brinquedos Conectados</span>
-                        <span class="text-2xl font-black text-orange-600 mt-1">3 Ativos</span>
+                        <span class="block text-xs font-bold uppercase tracking-wider text-gray-400">Status do Banco</span>
+                        <span id="status-conexao" class="text-xl font-black text-emerald-600 mt-1">Conectado</span>
                     </div>
                     <div class="p-3 bg-purple-50 rounded-2xl text-purple-500"><i data-lucide="wifi"></i></div>
                 </div>
@@ -179,10 +180,59 @@
     </main>
 
     <script>
-        lucide.createIcons();
+        // CONFIGURAÇÃO DO SUPABASE COM AS SUAS CREDENCIAIS
+        const SUPABASE_URL = "https://qfavuilkdddpiuroleww.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_t3T621tJpNU-exRP7GM5BQ__QpVIeQa";
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let sessoes = [];
-        let historico = [];
+        let sessoesAtivasLocal = [];
+        let historicoLocal = [];
+
+        // Inicializar aplicação
+        async function init() {
+            lucide.createIcons();
+            await carregarDadosDoBanco();
+            inscreverNoRealtime();
+            
+            // Loop para atualizar a contagem visual dos cronômetros a cada 1 segundo
+            setInterval(calcularTemposRegressivos, 1000);
+        }
+
+        // Carrega dados iniciais do Supabase
+        async function carregarDadosDoBanco() {
+            try {
+                const { data, error } = await _supabase
+                    .from('sessoes')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                // Separar o que é ativo do que está finalizado
+                sessoesAtivasLocal = data.filter(s => s.status === 'ativo');
+                historicoLocal = data.filter(s => s.status === 'finalizado');
+
+                renderCards();
+                renderDashboard();
+            } catch (err) {
+                console.error("Erro ao carregar dados:", err.message);
+                document.getElementById('status-conexao').textContent = "Erro de Conexão";
+                document.getElementById('status-conexao').className = "text-xl font-black text-red-600 mt-1";
+            }
+        }
+
+        // Inscreve o app para ouvir mudanças em tempo real (Realtime)
+        function inscreverNoRealtime() {
+            _supabase
+                .channel('mudancas-sessoes')
+                .on('postgres_changes', { event: '*', filter: 'status=eq.ativo', schema: 'public', table: 'sessoes' }, () => {
+                    carregarDadosDoBanco();
+                })
+                .on('postgres_changes', { event: 'update', filter: 'status=eq.finalizado', schema: 'public', table: 'sessoes' }, () => {
+                    carregarDadosDoBanco();
+                })
+                .subscribe();
+        }
 
         // Alternar abas
         function switchTab(tab) {
@@ -205,19 +255,17 @@
             }
         }
 
-        // Quando o operador mudar o seletor de brinquedo do celular dele
         function aoMudarBrinquedoOperador() {
             const brinquedoSelecionado = document.getElementById('filtro-brinquedo-operador').value;
             const selectFormulario = document.getElementById('brinquedo');
-            
-            // Facilita a vida do operador: muda automaticamente o formulário para o brinquedo dele
             if(brinquedoSelecionado !== "Todos") {
                 selectFormulario.value = brinquedoSelecionado;
             }
             renderCards();
         }
 
-        function addCriança(event) {
+        // Inserir dados diretamente no Supabase
+        async function addCriança(event) {
             event.preventDefault();
 
             const nome = document.getElementById('nome-crianca').value;
@@ -225,38 +273,64 @@
             const minutos = parseInt(document.getElementById('tempo-minutos').value);
             const valor = parseFloat(document.getElementById('valor-cobrado').value);
             const pagamento = document.getElementById('pagamento').value;
-            
-            const tempoEmSegundos = minutos * 60;
-            const id = Date.now();
 
-            const novaSessao = {
-                id: id,
-                nome: nome,
-                brinquedo: brinquedo,
-                minutosIniciais: minutos,
-                valor: valor,
-                pagamento: pagamento,
-                tempoRestante: tempoEmSegundos,
-                tempoTotal: tempoEmSegundos
-            };
+            try {
+                const { error } = await _supabase
+                    .from('sessoes')
+                    .insert([{
+                        nome,
+                        brinquedo,
+                        minutos_iniciais: minutos,
+                        valor,
+                        pagamento,
+                        status: 'ativo'
+                    }]);
 
-            sessoes.push(novaSessao);
-            document.getElementById('form-checkin').reset();
-            
-            // Mantém o brinquedo fixado se o operador tiver selecionado um específico
-            aoMudarBrinquedoOperador();
+                if (error) throw error;
+
+                document.getElementById('form-checkin').reset();
+                aoMudarBrinquedoOperador();
+            } catch (err) {
+                alert("Erro ao salvar no servidor: " + err.message);
+            }
         }
 
-        function finalizarSessao(id) {
-            const sessaoFinalizada = sessoes.find(s => s.id === id);
-            if (sessaoFinalizada) {
-                historico.push(sessaoFinalizada);
+        // Atualizar status no Supabase para finalizado
+        async function finalizarSessao(id) {
+            try {
+                const { error } = await _supabase
+                    .from('sessoes')
+                    .update({ status: 'finalizado' })
+                    .eq('id', id);
+
+                if (error) throw error;
+            } catch (err) {
+                alert("Erro ao finalizar sessão: " + err.message);
             }
-            sessoes = sessoes.filter(s => s.id !== id);
+        }
+
+        // Calcula a contagem regressiva baseada no horário do servidor remoto
+        function calcularTemposRegressivos() {
+            let houveMudanca = false;
+            const agora = new Date();
+
+            sessoesAtivasLocal.forEach(sessao => {
+                const inicio = new Date(sessao.inicio_em);
+                const tempoTotalSegundos = sessao.minutos_iniciais * 60;
+                const segundosPassados = Math.floor((agora - inicio) / 1000);
+                
+                const tempoRestante = tempoTotalSegundos - segundosPassados;
+                
+                // Armazena temporariamente para renderização
+                sessao.tempoRestanteCalculado = tempoRestante;
+                sessao.porcentagemCalculada = (tempoRestante / tempoTotalSegundos) * 100;
+            });
+
             renderCards();
         }
 
         function formatarTempo(segundos) {
+            if (segundos <= 0) return "FIM DO TEMPO";
             const min = Math.floor(segundos / 60);
             const seg = segundos % 60;
             return `${min.toString().padStart(2, '0')}:${seg.toString().padStart(2, '0')}`;
@@ -271,8 +345,7 @@
             const cardsAtivos = container.querySelectorAll('.card-cronometro');
             cardsAtivos.forEach(card => card.remove());
 
-            // FILTRAGEM: Aqui está o segredo para cada celular ver só o seu brinquedo
-            const sessoesFiltradas = sessoes.filter(s => filtroBrinquedo === "Todos" || s.brinquedo === filtroBrinquedo);
+            const sessoesFiltradas = sessoesAtivasLocal.filter(s => filtroBrinquedo === "Todos" || s.brinquedo === filtroBrinquedo);
 
             if (sessoesFiltradas.length === 0) {
                 semCriancas.classList.remove('hidden');
@@ -284,17 +357,18 @@
             contadorAtivas.textContent = `${sessoesFiltradas.length} Ativas (${filtroBrinquedo})`;
 
             sessoesFiltradas.forEach(sessao => {
-                const porcetagemRestante = (sessao.tempoRestante / sessao.tempoTotal) * 100;
+                const tempoRestante = sessao.tempoRestanteCalculado !== undefined ? sessao.tempoRestanteCalculado : (sessao.minutos_iniciais * 60);
+                const porcetagemRestante = sessao.porcentagemCalculada !== undefined ? sessao.porcentagemCalculada : 100;
                 
                 let corBorda = "border-gray-200";
                 let corProgresso = "bg-orange-500";
                 let piscarClasse = "";
 
-                if (sessao.tempoRestante <= 0) {
+                if (tempoRestante <= 0) {
                     corBorda = "border-red-500 bg-red-50";
                     corProgresso = "bg-red-600";
                     piscarClasse = "animate-pulse text-red-600 font-black";
-                } else if (sessao.tempoRestante <= 60) {
+                } else if (tempoRestante <= 60) {
                     corBorda = "border-amber-400 bg-amber-50";
                     corProgresso = "bg-amber-500";
                 }
@@ -311,7 +385,7 @@
                                         <i data-lucide="gamepad-2" class="w-3 h-3 mr-1"></i> ${sessao.brinquedo}
                                     </span>
                                     <span class="text-xs bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-xl font-black">
-                                        R$ ${sessao.valor.toFixed(2)}
+                                        R$ ${parseFloat(sessao.valor).toFixed(2)}
                                     </span>
                                 </div>
                             </div>
@@ -322,13 +396,13 @@
 
                         <div class="my-5 text-center">
                             <span class="text-3xl font-mono font-black tracking-widest ${piscarClasse}">
-                                ${sessao.tempoRestante <= 0 ? "FIM DO TEMPO" : formatarTempo(sessao.tempoRestante)}
+                                ${formatarTempo(tempoRestante)}
                             </span>
                         </div>
                     </div>
 
                     <div class="w-full bg-gray-100 rounded-full h-2.5 mt-1">
-                        <div class="${corProgresso} h-2.5 rounded-full transition-all duration-1000" style="width: ${Math.max(0, porcetagemRestante)}%"></div>
+                        <div class="${corProgresso} h-2.5 rounded-full transition-all" style="width: ${Math.max(0, porcetagemRestante)}%"></div>
                     </div>
                 `;
                 container.appendChild(card);
@@ -338,46 +412,38 @@
         }
 
         function renderDashboard() {
-            const totalFaturamento = historico.reduce((acc, curr) => acc + curr.valor, 0);
-            const totalAtendimentos = historico.length;
-            const totalTempo = historico.reduce((acc, curr) => acc + curr.minutosIniciais, 0);
+            const totalFaturamento = historicoLocal.reduce((acc, curr) => acc + parseFloat(curr.valor), 0);
+            const totalAtendimentos = historicoLocal.length;
+            const totalTempo = historicoLocal.reduce((acc, curr) => acc + curr.minutos_iniciais, 0);
 
             document.getElementById('dash-faturamento').textContent = `R$ ${totalFaturamento.toFixed(2)}`;
-            document.getElementById('dash-atendimentos').textContent = `${totalAtendimentos} crianças`;
+            document.getElementById('dash-atendimentos').textContent = `${totalAtendimentos} concluídos`;
             document.getElementById('dash-tempo').textContent = `${totalTempo} min`;
 
             const corpoTabela = document.getElementById('historico-corpo');
             corpoTabela.innerHTML = '';
 
-            if (historico.length === 0) {
+            if (historicoLocal.length === 0) {
                 corpoTabela.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-gray-400 italic">Nenhum atendimento finalizado na rede.</td></tr>`;
                 return;
             }
 
-            historico.forEach(item => {
+            historicoLocal.forEach(item => {
                 const tr = document.createElement('tr');
                 tr.className = "border-b border-gray-50 hover:bg-gray-50/50 transition text-gray-700";
                 tr.innerHTML = `
                     <td class="py-3 font-bold">${item.nome}</td>
                     <td class="py-3 font-medium">${item.brinquedo}</td>
-                    <td class="py-3 font-mono">${item.minutosIniciais} min</td>
-                    <td class="py-3 font-black text-emerald-600">R$ ${item.valor.toFixed(2)}</td>
+                    <td class="py-3 font-mono">${item.minutos_iniciais} min</td>
+                    <td class="py-3 font-black text-emerald-600">R$ ${parseFloat(item.valor).toFixed(2)}</td>
                     <td class="py-3"><span class="bg-gray-100 text-gray-600 px-2.5 py-0.5 rounded-xl text-xs font-bold">${item.pagamento}</span></td>
                 `;
                 corpoTabela.appendChild(tr);
             });
         }
 
-        setInterval(() => {
-            if (sessoes.length > 0) {
-                sessoes.forEach(sessao => {
-                    if (sessao.tempoRestante > 0) {
-                        sessao.tempoRestante--;
-                    }
-                });
-                renderCards();
-            }
-        }, 1000);
+        // Executa ao carregar a página
+        window.onload = init;
     </script>
 </body>
 </html>
