@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kauekids-cache-v2'; // Mudei a versão para forçar o celular a atualizar
+const CACHE_NAME = 'kauekids-cache-v3'; 
 const assets = [
   '/',
   '/index.html',
@@ -6,7 +6,6 @@ const assets = [
   '/imagem.png'
 ];
 
-// Instalar o Service Worker e guardar a estrutura básica no cache
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
@@ -15,7 +14,6 @@ self.addEventListener('install', event => {
   );
 });
 
-// Ativar e limpar caches antigos
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys => {
@@ -26,7 +24,6 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Responder requisições buscando no cache primeiro ou indo na rede
 self.addEventListener('fetch', event => {
   event.respondWith(
     caches.match(event.request).then(cachedResponse => {
