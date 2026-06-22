@@ -171,7 +171,7 @@
 
             <!-- ADICIONAR E VER FATURAMENTO POR BRINQUEDO -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- FORMULÁRIO DE GESTÃO DE BRINQUEDOS (RECURSO NOVO) -->
+                <!-- FORMULÁRIO DE GESTÃO DE BRINQUEDOS -->
                 <div class="bg-white p-6 rounded-3xl shadow-sm border border-purple-100 h-fit space-y-4">
                     <div class="flex items-center space-x-2">
                         <i data-lucide="plus-circle" class="text-purple-600 w-5 h-5"></i>
@@ -239,7 +239,6 @@
             setInterval(calcularTemposRegressivos, 1000);
         }
 
-        // CARREGA A LISTA DE BRINQUEDOS DO BANCO
         async function carregarBrinquedos() {
             try {
                 const { data, error } = await _supabase.from('brinquedos').select('*').order('nome', { ascending: true });
@@ -258,8 +257,10 @@
                 sessoesAtivasLocal = data.filter(s => s.status === 'ativo');
                 historicoLocal = data.filter(s => s.status === 'finalizado');
 
-                renderCards();
-                renderDashboard();
+                // Garante o cálculo imediato ao carregar para não dar tela em branco
+                atualizarLógicaDeContagem(); 
+                if (modoAtual === 'operador') renderCards();
+                if (modoAtual === 'admin') renderDashboard();
             } catch (err) {
                 console.error("Erro na carga de dados:", err.message);
             }
@@ -273,7 +274,6 @@
                 .subscribe();
         }
 
-        // MONTA OS BOTÕES DA HOME E O COMPONENTE DO ADMIN DINAMICAMENTE
         function renderizarOpcoesBrinquedos() {
             const containerHome = document.getElementById('lista-brinquedos-home');
             containerHome.innerHTML = '';
@@ -288,7 +288,6 @@
             lucide.createIcons();
         }
 
-        // CRIA NOVO BRINQUEDO VIA ADMIN
         async function addNovoBrinquedoNoBanco(event) {
             event.preventDefault();
             const input = document.getElementById('input-novo-brinquedo');
@@ -384,15 +383,22 @@
             }
         }
 
-        function calcularTemposRegressivos() {
+        // CORREÇÃO CENTRAL: Lógica separada para processar os tempos milimetricamente
+        function atualizarLógicaDeContagem() {
             const agora = new Date();
             sessoesAtivasLocal.forEach(sessao => {
+                // Força a interpretação correta da data UTC do Supabase convertendo para fuso local
                 const inicio = new Date(sessao.inicio_em);
                 const tempoTotalSegundos = sessao.minutos_iniciais * 60;
                 const segundosPassados = Math.floor((agora - inicio) / 1000);
+                
                 sessao.tempoRestanteCalculado = tempoTotalSegundos - segundosPassados;
                 sessao.porcentagemCalculada = (sessao.tempoRestanteCalculado / tempoTotalSegundos) * 100;
             });
+        }
+
+        function calcularTemposRegressivos() {
+            atualizarLógicaDeContagem();
             if (modoAtual === 'operador') renderCards();
         }
 
@@ -423,6 +429,7 @@
             contadorAtivas.textContent = `${sessoesFiltradas.length} Ativas`;
 
             sessoesFiltradas.forEach(sessao => {
+                // Se ainda não passou pela contagem regressiva, calcula manualmente para o card não quebrar na hora de nascer
                 const tempoRestante = sessao.tempoRestanteCalculado !== undefined ? sessao.tempoRestanteCalculado : (sessao.minutos_iniciais * 60);
                 const porcetagemRestante = sessao.porcentagemCalculada !== undefined ? sessao.porcentagemCalculada : 100;
                 
@@ -480,7 +487,6 @@
             document.getElementById('dash-dinheiro').textContent = `R$ ${dinheiro.toFixed(2)}`;
             document.getElementById('dash-cartao').textContent = `R$ ${cartao.toFixed(2)}`;
 
-            // LISTAGEM DINÂMICA DE VALORES POR BRINQUEDO NO ADMIN
             const containerFaturamentos = document.getElementById('lista-faturamentos-brinquedos');
             containerFaturamentos.innerHTML = '';
             
