@@ -142,7 +142,7 @@
                 <div class="bg-white p-5 rounded-3xl shadow-sm border border-amber-100 flex items-center justify-between">
                     <div>
                         <span class="block text-xs font-bold uppercase tracking-wider text-amber-500">Entrou no Dinheiro</span>
-                        <span id="dash-dinheiro" class="text-2xl font-black text-amber-900 mt-1">R$ 0,00</span>
+                        <span id="dash-dinheiro" class="text-2xl font-black text-gray-900 mt-1">R$ 0,00</span>
                     </div>
                     <div class="p-3 bg-amber-50 rounded-2xl text-amber-500"><i data-lucide="banknote"></i></div>
                 </div>
@@ -236,7 +236,20 @@
             try {
                 const { data, error } = await _supabase.from('sessoes').select('*').order('created_at', { ascending: false });
                 if (error) throw error;
-                sessoesAtivasLocal = data.filter(s => s.status === 'ativo');
+                
+                // Evita sobrescrever o card recém-criado localmente se o banco demorar um pouquinho
+                const novasAtivas = data.filter(s => s.status === 'ativo');
+                
+                // Mescla os dados mantendo itens criados localmente com ID temporário se ainda não retornaram do banco
+                novasAtivas.forEach(sessaoBanco => {
+                    const indexLocal = sessoesAtivasLocal.findIndex(s => s.nome === sessaoBanco.nome && s.brinquedo === sessaoBanco.brinquedo && s.minutos_iniciais === sessaoBanco.minutos_iniciais);
+                    if (indexLocal !== -1 && String(sessoesAtivasLocal[indexLocal].id).startsWith('temp_')) {
+                        sessoesAtivasLocal[indexLocal] = sessaoBanco; // Substitui o temporário pelo oficial do banco
+                    }
+                });
+
+                // Atualiza a lista oficial com o que veio estável do banco de dados
+                sessoesAtivasLocal = novasAtivas.length > 0 ? novasAtivas : sessoesAtivasLocal;
                 historicoLocal = data.filter(s => s.status === 'finalizado');
 
                 atualizarLogicaDeContagem(); 
@@ -339,15 +352,33 @@
             renderizarTelaPorModo();
         }
 
+        // CRIAÇÃO E RENDERIZAÇÃO INSTANTÂNEA LOCAL
         async function addCriança(event) {
             event.preventDefault();
             const nome = document.getElementById('nome-crianca').value;
             const minutos = parseInt(document.getElementById('tempo-minutos').value);
             const valor = parseFloat(document.getElementById('valor-cobrado').value);
             const pagamento = document.getElementById('pagamento').value;
-
-            // CRÍTICO: O próprio dispositivo define a string ISO correta para evitar divergências de fuso horário
             const isoDataLocal = new Date().toISOString();
+
+            // Cria um objeto temporário na memória do celular para renderizar na hora!
+            const sessaoTemporaria = {
+                id: 'temp_' + Date.now(),
+                nome,
+                brinquedo: brinquedoOperador,
+                minutos_iniciais: minutos,
+                valor,
+                pagamento,
+                status: 'ativo',
+                inicio_em: isoDataLocal,
+                tempoRestanteCalculado: minutos * 60,
+                porcentagemCalculada: 100
+            };
+
+            // Insere no início da lista local e redesenha a tela no mesmo milissegundo
+            sessoesAtivasLocal.unshift(sessaoTemporaria);
+            renderCards();
+            document.getElementById('form-checkin').reset();
 
             try {
                 const { error } = await _supabase.from('sessoes').insert([{
@@ -360,18 +391,25 @@
                     inicio_em: isoDataLocal
                 }]);
                 if (error) throw error;
-                document.getElementById('form-checkin').reset();
             } catch (err) {
-                alert("Erro ao salvar: " + err.message);
+                // Se der erro no servidor, remove o card temporário da tela
+                sessoesAtivasLocal = sessoesAtivasLocal.filter(s => s.id !== sessaoTemporaria.id);
+                renderCards();
+                alert("Erro ao sincronizar com o servidor: " + err.message);
             }
         }
 
         async function finalizarSessao(id) {
+            // Remove visualmente de forma instantânea para dar agilidade ao operador
+            sessoesAtivasLocal = sessoesAtivasLocal.filter(s => s.id !== id);
+            renderCards();
+
             try {
                 const { error } = await _supabase.from('sessoes').update({ status: 'finalizado' }).eq('id', id);
                 if (error) throw error;
             } catch (err) {
-                alert("Erro ao finalizar sessão: " + err.message);
+                alert("Erro ao finalizar sessão no servidor: " + err.message);
+                await carregarDadosDoBanco();
             }
         }
 
@@ -421,12 +459,11 @@
             sessoesFiltradas.forEach(sessao => {
                 let tempoRestante = sessao.tempoRestanteCalculado;
                 
-                // Fallback de segurança milimétrica caso o loop ainda não tenha rodado
                 if (tempoRestante === undefined || isNaN(tempoRestante)) {
                     const agora = new Date();
                     const inicio = new Date(sessao.inicio_em);
                     const totalSegundos = sessao.minutos_iniciais * 60;
-                    tempoRestante = totalTotalSegundos = totalSegundos - Math.floor((agora - inicio) / 1000);
+                    tempoRestante = totalSegundos - Math.floor((agora - inicio) / 1000);
                 }
                 
                 let porcetagemRestante = sessao.porcentagemCalculada !== undefined && !isNaN(sessao.porcentagemCalculada) ? sessao.porcentagemCalculada : 100;
@@ -455,7 +492,7 @@
                                     R$ ${parseFloat(sessao.valor).toFixed(2)} (${sessao.pagamento})
                                 </span>
                             </div>
-                            <button onclick="finalizarSessao(${sessao.id})" class="bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white px-3 py-2 text-xs font-black rounded-xl transition flex items-center space-x-1">
+                            <button onclick="finalizarSessao(${typeof sessao.id === 'string' ? `'${sessao.id}'` : sessao.id})" class="bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white px-3 py-2 text-xs font-black rounded-xl transition flex items-center space-x-1">
                                 <i data-lucide="check" class="w-4 h-4"></i> <span>Zerar</span>
                             </button>
                         </div>
