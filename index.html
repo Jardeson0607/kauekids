@@ -196,11 +196,12 @@
                                     <th class="pb-3">Tempo Inicial</th>
                                     <th class="pb-3">Valor</th>
                                     <th class="pb-3">Meio Pago</th>
+                                    <th class="pb-3 text-right">Ação</th>
                                 </tr>
                             </thead>
                             <tbody id="historico-corpo" class="text-sm divide-y divide-gray-50 text-gray-600">
                                 <tr>
-                                    <td colspan="5" class="py-4 text-center text-gray-400 italic">Carregando histórico...</td>
+                                    <td colspan="6" class="py-4 text-center text-gray-400 italic">Carregando histórico...</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -220,8 +221,6 @@
         let listaBrinquedosLocal = [];
         let modoAtual = 'selecao';
         let brinquedoOperador = '';
-        
-        // Estado do Filtro do Administrador
         let brinquedoFiltradoAdmin = ''; 
 
         async function init() {
@@ -258,7 +257,7 @@
                     }
                 });
 
-                sessoesAtivasLocal = novasAtivas.length > 0 ? novasAtivas : sessoesAtivasLocal;
+                sessoesAtivasLocal = novasAtivas;
                 historicoLocal = data.filter(s => s.status === 'finalizado');
 
                 atualizarLogicaDeContagem(); 
@@ -348,7 +347,7 @@
             const senha = prompt("Digite a senha do Administrador:");
             if (senha === "admin123") {
                 modoAtual = 'admin';
-                brinquedoFiltradoAdmin = ''; // Começa sem filtros
+                brinquedoFiltradoAdmin = ''; 
                 renderizarTelaPorModo();
                 renderDashboard();
             } else {
@@ -363,7 +362,6 @@
             renderizarTelaPorModo();
         }
 
-        // GERENCIAMENTO DE FILTRO ADMIN
         function filtrarBrinquedoAdmin(nomeBrinquedo) {
             brinquedoFiltradoAdmin = nomeBrinquedo;
             renderDashboard();
@@ -424,6 +422,22 @@
             }
         }
 
+        // FUNÇÃO DE APAGAR REGISTRO DEFINITIVO (RECURSO NOVO)
+        async function deletarRegistroAdmin(id, nomeCriança) {
+            if (confirm(`Tem certeza que deseja apagar permanentemente o registro de "${nomeCriança}" do histórico?`)) {
+                try {
+                    const { error } = await _supabase.from('sessoes').delete().eq('id', id);
+                    if (error) throw error;
+                    
+                    // Atualiza localmente para resposta instantânea na tela
+                    historicoLocal = historicoLocal.filter(item => item.id !== id);
+                    renderDashboard();
+                } catch (err) {
+                    alert("Erro ao deletar registro do banco: " + err.message);
+                }
+            }
+        }
+
         function atualizarLogicaDeContagem() {
             const agora = new Date();
             sessoesAtivasLocal.forEach(sessao => {
@@ -437,7 +451,7 @@
         }
 
         function calcularTemposRegressivos() {
-            atualizarLogicaDeContagem();
+            vertical = atualizarLogicaDeContagem();
             if (modoAtual === 'operador') renderCards();
         }
 
@@ -523,12 +537,10 @@
         }
 
         function renderDashboard() {
-            // Se houver um brinquedo filtrado, separa o histórico apenas dele
             const historicoFiltrado = brinquedoFiltradoAdmin 
                 ? historicoLocal.filter(s => s.brinquedo === brinquedoFiltradoAdmin)
                 : historicoLocal;
 
-            // Altera elementos visuais do cabeçalho do filtro
             const divFiltroInfo = document.getElementById('container-filtro-ativo');
             const textoFiltroInfo = document.getElementById('nome-filtro-ativo');
             const labelCaixaGeral = document.getElementById('label-caixa-geral');
@@ -545,7 +557,6 @@
                 tituloHistorico.textContent = `Histórico Geral Unificado`;
             }
 
-            // Calcula faturamento baseado no histórico filtrado (Geral ou por brinquedo)
             const pix = historicoFiltrado.filter(s => s.pagamento === 'PIX').reduce((a, c) => a + parseFloat(c.valor), 0);
             const dinheiro = historicoFiltrado.filter(s => s.pagamento === 'Dinheiro').reduce((a, c) => a + parseFloat(c.valor), 0);
             const cartao = historicoFiltrado.filter(s => s.pagamento === 'Cartão').reduce((a, c) => a + parseFloat(c.valor), 0);
@@ -556,19 +567,15 @@
             document.getElementById('dash-dinheiro').textContent = `R$ ${dinheiro.toFixed(2)}`;
             document.getElementById('dash-cartao').textContent = `R$ ${cartao.toFixed(2)}`;
 
-            // RENDERIZAÇÃO DA LISTA DA ESQUERDA COMO BOTÕES DE FILTRO DINÂMICO
             const containerFaturamentos = document.getElementById('lista-faturamentos-brinquedos');
             containerFaturamentos.innerHTML = '';
             
             listaBrinquedosLocal.forEach(b => {
                 const fat = historicoLocal.filter(s => s.brinquedo === b.nome).reduce((a, c) => a + parseFloat(c.valor), 0);
-                
-                // Cria um botão clicável para acionar o filtro
                 const btnItem = document.createElement('button');
                 btnItem.type = "button";
                 btnItem.onclick = () => filtrarBrinquedoAdmin(b.nome);
                 
-                // Destaca visualmente se o brinquedo atual for o selecionado
                 const classeAtiva = brinquedoFiltradoAdmin === b.nome 
                     ? "border-orange-500 bg-orange-50/50 text-orange-900 ring-2 ring-orange-200" 
                     : "border-gray-100 bg-gray-50 text-gray-700 hover:border-orange-200 hover:bg-orange-50/30";
@@ -584,26 +591,31 @@
                 containerFaturamentos.appendChild(btnItem);
             });
 
-            // ATUALIZA A TABELA DA DIREITA
             document.getElementById('dash-atendimentos').textContent = `${historicoFiltrado.length} exibidos`;
 
             const corpoTabela = document.getElementById('historico-corpo');
             corpoTabela.innerHTML = '';
 
             if (historicoFiltrado.length === 0) {
-                corpoTabela.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-gray-400 italic">Nenhum atendimento encontrado para esta seleção.</td></tr>`;
+                corpoTabela.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-gray-400 italic">Nenhum atendimento encontrado para esta seleção.</td></tr>`;
                 return;
             }
 
             historicoFiltrado.forEach(item => {
                 const tr = document.createElement('tr');
                 tr.className = "border-b border-gray-50 hover:bg-gray-50/50 transition text-gray-700";
+                // ADICIONADO AÚLTIMA COLUNA COM BOTÃO DE LIXEIRA CHAMANDO A FUNÇÃO DE DELETE
                 tr.innerHTML = `
                     <td class="py-3 font-bold">${item.nome}</td>
                     <td class="py-3 font-medium"><span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md text-xs">${item.brinquedo}</span></td>
                     <td class="py-3 font-mono">${item.minutos_iniciais} min</td>
                     <td class="py-3 font-black text-emerald-600">R$ ${parseFloat(item.valor).toFixed(2)}</td>
                     <td class="py-3"><span class="bg-gray-100 text-gray-600 px-2.5 py-0.5 rounded-xl text-xs font-bold">${item.pagamento}</span></td>
+                    <td class="py-3 text-right">
+                        <button onclick="deletarRegistroAdmin(${item.id}, '${item.nome}')" class="text-gray-400 hover:text-red-600 p-1 rounded-lg hover:bg-red-50 transition" title="Apagar Registro">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </td>
                 `;
                 corpoTabela.appendChild(tr);
             });
