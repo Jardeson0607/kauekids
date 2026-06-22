@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KauêKids - Sistema de Parques Realtime</title>
+    <title>KauêKids - Sistema União de Parques</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="bg-amber-50/40 font-sans text-gray-800 antialiased">
+<body class="bg-slate-50 font-sans text-gray-800 antialiased">
 
     <nav class="bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -16,54 +16,66 @@
                 <div class="flex items-center space-x-2">
                     <i data-lucide="sparkles" class="w-6 h-6 text-yellow-200 animate-bounce"></i>
                     <span class="font-black text-2xl tracking-tight">Kauê<span class="text-yellow-200">Kids</span></span>
+                    <span id="badge-modo-tela" class="ml-2 bg-white/20 px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider">Carregando...</span>
                 </div>
                 <div class="flex space-x-2 text-sm font-medium">
-                    <button onclick="switchTab('operacao')" id="btn-tab-operacao" class="bg-orange-700 font-bold px-4 py-2 rounded-xl transition">Operação</button>
-                    <button onclick="switchTab('dashboard')" id="btn-tab-dashboard" class="hover:bg-orange-600 font-bold px-4 py-2 rounded-xl transition">Dashboard</button>
+                    <button onclick="logout()" id="btn-sair" class="hidden hover:bg-black/10 font-bold px-3 py-2 rounded-xl transition flex items-center space-x-1">
+                        <i data-lucide="log-out" class="w-4 h-4"></i> <span>Sair</span>
+                    </button>
                 </div>
             </div>
         </div>
     </nav>
 
-    <div class="bg-orange-100 border-b border-orange-200 py-3">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2">
-            <div class="flex items-center space-x-2 text-orange-800 text-sm font-medium">
-                <i data-lucide="smartphone" class="w-4 h-4"></i>
-                <span>Dispositivo conectado como operador de:</span>
-            </div>
-            <select id="filtro-brinquedo-operador" onchange="aoMudarBrinquedoOperador()" class="bg-white text-orange-900 font-bold text-sm px-4 py-1.5 rounded-xl border border-orange-300 focus:outline-none focus:ring-2 focus:ring-orange-500">
-                <option value="Todos">Visualizar Todos os Brinquedos (Gerência)</option>
-                <option value="Pula-Pula">Pula-Pula</option>
-                <option value="Escorregador Inflável">Escorregador Inflável</option>
-                <option value="Piscina de Bolinhas">Piscina de Bolinhas</option>
-            </select>
-        </div>
-    </div>
-
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         
-        <section id="tab-operacao" class="space-y-6">
+        <section id="tela-selecao" class="hidden max-w-xl mx-auto py-12 space-y-8">
+            <div class="text-center">
+                <h1 class="text-3xl font-black text-gray-900 tracking-tight">Bem-vindo ao KauêKids</h1>
+                <p class="text-gray-500 mt-2 text-sm">Escolha seu perfil de acesso para iniciar os trabalhos no parque.</p>
+            </div>
+            
+            <div class="grid grid-cols-1 gap-4">
+                <button onclick="pedirSenhaAdmin()" class="bg-white hover:border-orange-500 border-2 border-gray-100 p-6 rounded-3xl shadow-sm text-left transition flex items-center space-x-4 group">
+                    <div class="p-4 bg-orange-100 text-orange-600 rounded-2xl group-hover:bg-orange-500 group-hover:text-white transition"><i data-lucide="shield-check" class="w-6 h-6"></i></div>
+                    <div>
+                        <span class="block font-black text-lg text-gray-900">Painel do Administrador</span>
+                        <span class="block text-xs text-gray-400 mt-0.5">Acesso a faturamento por PIX/Cartão, gráficos e configurações gerais.</span>
+                    </div>
+                </button>
+
+                <div class="relative flex py-2 items-center">
+                    <div class="flex-grow border-t border-gray-200"></div>
+                    <span class="flex-shrink mx-4 text-gray-400 text-xs font-bold uppercase tracking-wider">Entrar como Operador</span>
+                    <div class="flex-grow border-t border-gray-200"></div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <button onclick="entrarComoOperador('Pula-Pula')" class="bg-white hover:bg-orange-50 border border-gray-200 p-4 rounded-2xl text-center transition font-bold text-gray-700 flex flex-col items-center space-y-2">
+                        <i data-lucide="smile" class="text-orange-500 w-6 h-6"></i> <span>Pula-Pula</span>
+                    </button>
+                    <button onclick="entrarComoOperador('Escorregador')" class="bg-white hover:bg-orange-50 border border-gray-200 p-4 rounded-2xl text-center transition font-bold text-gray-700 flex flex-col items-center space-y-2">
+                        <i data-lucide="zap" class="text-amber-500 w-6 h-6"></i> <span>Escorregador</span>
+                    </button>
+                    <button onclick="entrarComoOperador('Piscina de Bolinhas')" class="bg-white hover:bg-orange-50 border border-gray-200 p-4 rounded-2xl text-center transition font-bold text-gray-700 flex flex-col items-center space-y-2">
+                        <i data-lucide="circle-dot" class="text-blue-500 w-6 h-6"></i> <span>Piscina de Bolinhas</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <section id="tela-operador" class="hidden space-y-6">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                
                 <div class="bg-white p-6 rounded-3xl shadow-sm border border-orange-100 h-fit">
                     <div class="flex items-center space-x-2 mb-6">
-                        <i data-lucide="baby" class="text-orange-500 w-6 h-6"></i>
-                        <h2 class="text-lg font-black text-gray-900">Nova Entrada</h2>
+                        <i data-lucide="user-plus" class="text-orange-500 w-5 h-5"></i>
+                        <h2 class="text-lg font-black text-gray-900">Nova Entrada no <span id="label-brinquedo-form" class="text-orange-500"></span></h2>
                     </div>
                     
                     <form id="form-checkin" onsubmit="addCriança(event)" class="space-y-4">
                         <div>
                             <label class="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">Nome da Criança</label>
-                            <input type="text" id="nome-crianca" required class="w-full px-4 py-2.5 rounded-2xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 bg-gray-50 font-medium" placeholder="Ex: Lucas">
-                        </div>
-                        
-                        <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">Brinquedo Atual</label>
-                            <select id="brinquedo" class="w-full px-4 py-2.5 rounded-2xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 bg-gray-50 font-bold text-gray-700">
-                                <option value="Pula-Pula">Pula-Pula</option>
-                                <option value="Escorregador Inflável">Escorregador Inflável</option>
-                                <option value="Piscina de Bolinhas">Piscina de Bolinhas</option>
-                            </select>
+                            <input type="text" id="nome-crianca" required class="w-full px-4 py-2.5 rounded-2xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 bg-gray-50 font-medium" placeholder="Ex: Arthur">
                         </div>
                         
                         <div class="grid grid-cols-2 gap-4">
@@ -85,7 +97,7 @@
 
                         <div>
                             <label class="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">Pagamento</label>
-                            <select id="pagamento" class="w-full px-4 py-2.5 rounded-2xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 bg-gray-50 font-medium">
+                            <select id="pagamento" class="w-full px-4 py-2.5 rounded-2xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 bg-gray-50 font-bold text-gray-700">
                                 <option value="PIX">PIX</option>
                                 <option value="Dinheiro">Dinheiro</option>
                                 <option value="Cartão">Cartão</option>
@@ -94,7 +106,7 @@
                         
                         <button type="submit" class="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black py-3.5 px-4 rounded-2xl transition shadow-md shadow-orange-100 flex items-center justify-center space-x-2 text-base">
                             <i data-lucide="play" class="w-5 h-5 fill-current"></i>
-                            <span>Soltar Cronômetro</span>
+                            <span>Disparar Cronômetro</span>
                         </button>
                     </form>
                 </div>
@@ -103,73 +115,91 @@
                     <div class="flex items-center justify-between">
                         <div class="flex items-center space-x-2">
                             <i data-lucide="hourglass" class="text-orange-500 w-5 h-5"></i>
-                            <h2 class="text-lg font-black text-gray-900">Painel de Monitoramento</h2>
+                            <h2 class="text-lg font-black text-gray-900">Painel Ativo — <span id="label-brinquedo-painel"></span></h2>
                         </div>
-                        <span id="contador-ativas" class="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-black">Carregando...</span>
+                        <span id="contador-ativas" class="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-black">0 Ativas</span>
                     </div>
                     
                     <div id="container-cronometros" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div id="sem-criancas" class="col-span-full bg-white border border-dashed border-orange-200 rounded-3xl p-12 text-center text-gray-400">
-                            <i data-lucide="smile" class="w-12 h-12 mx-auto mb-3 text-orange-200"></i>
-                            <p class="font-bold text-gray-600">Nenhuma criança ativa para este brinquedo.</p>
-                            <p class="text-xs mt-1">Insira os dados no painel ao lado.</p>
+                            <i data-lucide="clock" class="w-12 h-12 mx-auto mb-3 text-orange-200"></i>
+                            <p class="font-bold text-gray-600">Nenhum cronômetro rodando aqui no momento.</p>
                         </div>
                     </div>
                 </div>
-
             </div>
         </section>
 
-        <section id="tab-dashboard" class="hidden space-y-6">
-            <h2 class="text-xl font-black text-gray-900">Painel Geral KauêKids</h2>
+        <section id="tela-admin" class="hidden space-y-6">
+            <div class="flex items-center justify-between">
+                <h2 class="text-2xl font-black text-gray-900">Painel do Administrador Geral</h2>
+            </div>
             
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex items-center justify-between">
+                <div class="bg-white p-5 rounded-3xl shadow-sm border border-emerald-100 flex items-center justify-between">
                     <div>
-                        <span class="block text-xs font-bold uppercase tracking-wider text-gray-400">Arrecadação Total</span>
+                        <span class="block text-xs font-bold uppercase tracking-wider text-emerald-500">Caixa Geral</span>
                         <span id="dash-faturamento" class="text-2xl font-black text-gray-900 mt-1">R$ 0,00</span>
                     </div>
-                    <div class="p-3 bg-emerald-50 rounded-2xl text-emerald-500"><i data-lucide="badge-dollar-sign"></i></div>
+                    <div class="p-3 bg-emerald-50 rounded-2xl text-emerald-500"><i data-lucide="vault"></i></div>
                 </div>
-                <div class="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex items-center justify-between">
+                <div class="bg-white p-5 rounded-3xl shadow-sm border border-blue-100 flex items-center justify-between">
                     <div>
-                        <span class="block text-xs font-bold uppercase tracking-wider text-gray-400">Total Crianças</span>
-                        <span id="dash-atendimentos" class="text-2xl font-black text-gray-900 mt-1">0 cadastradas</span>
+                        <span class="block text-xs font-bold uppercase tracking-wider text-blue-500">Entrou no PIX</span>
+                        <span id="dash-pix" class="text-2xl font-black text-blue-900 mt-1">R$ 0,00</span>
                     </div>
-                    <div class="p-3 bg-orange-50 rounded-2xl text-orange-500"><i data-lucide="smile"></i></div>
+                    <div class="p-3 bg-blue-50 rounded-2xl text-blue-500"><i data-lucide="qr-code"></i></div>
                 </div>
-                <div class="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex items-center justify-between">
+                <div class="bg-white p-5 rounded-3xl shadow-sm border border-amber-100 flex items-center justify-between">
                     <div>
-                        <span class="block text-xs font-bold uppercase tracking-wider text-gray-400">Minutos Rodados</span>
-                        <span id="dash-tempo" class="text-2xl font-black text-gray-900 mt-1">0 min</span>
+                        <span class="block text-xs font-bold uppercase tracking-wider text-amber-500">Entrou no Dinheiro</span>
+                        <span id="dash-dinheiro" class="text-2xl font-black text-amber-900 mt-1">R$ 0,00</span>
                     </div>
-                    <div class="p-3 bg-amber-50 rounded-2xl text-amber-500"><i data-lucide="timer"></i></div>
+                    <div class="p-3 bg-amber-50 rounded-2xl text-amber-500"><i data-lucide="banknote"></i></div>
                 </div>
-                <div class="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex items-center justify-between">
+                <div class="bg-white p-5 rounded-3xl shadow-sm border border-purple-100 flex items-center justify-between">
                     <div>
-                        <span class="block text-xs font-bold uppercase tracking-wider text-gray-400">Status do Banco</span>
-                        <span id="status-conexao" class="text-xl font-black text-emerald-600 mt-1">Conectado</span>
+                        <span class="block text-xs font-bold uppercase tracking-wider text-purple-500">Entrou no Cartão</span>
+                        <span id="dash-cartao" class="text-2xl font-black text-purple-900 mt-1">R$ 0,00</span>
                     </div>
-                    <div class="p-3 bg-purple-50 rounded-2xl text-purple-500"><i data-lucide="wifi"></i></div>
+                    <div class="p-3 bg-purple-50 rounded-2xl text-purple-500"><i data-lucide="credit-card"></i></div>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="p-4 bg-orange-50/50 rounded-2xl border border-orange-100 text-center">
+                    <span class="text-xs font-bold text-orange-600 uppercase">Pula-Pula</span>
+                    <span id="faturamento-pula" class="block text-xl font-black mt-1">R$ 0,00</span>
+                </div>
+                <div class="p-4 bg-amber-50/50 rounded-2xl border border-amber-100 text-center">
+                    <span class="text-xs font-bold text-amber-600 uppercase">Escorregador</span>
+                    <span id="faturamento-escorregador" class="block text-xl font-black mt-1">R$ 0,00</span>
+                </div>
+                <div class="p-4 bg-blue-50/50 rounded-2xl border border-blue-100 text-center">
+                    <span class="text-xs font-bold text-blue-600 uppercase">Piscina de Bolinhas</span>
+                    <span id="faturamento-bolinhas" class="block text-xl font-black mt-1">R$ 0,00</span>
                 </div>
             </div>
 
             <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-                <h3 class="font-black text-gray-800 mb-4">Histórico Consolidado (Tempo Real)</h3>
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-black text-gray-800 text-lg">Histórico Geral Unificado</h3>
+                    <span id="dash-atendimentos" class="bg-slate-100 text-slate-700 px-3 py-1 rounded-xl text-xs font-bold">0 Concluídos</span>
+                </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
                         <thead>
                             <tr class="border-b border-gray-100 text-xs font-bold uppercase tracking-wider text-gray-400">
                                 <th class="pb-3">Criança</th>
                                 <th class="pb-3">Brinquedo</th>
-                                <th class="pb-3">Tempo</th>
+                                <th class="pb-3">Tempo Inicial</th>
                                 <th class="pb-3">Valor</th>
-                                <th class="pb-3">Pagamento</th>
+                                <th class="pb-3">Meio Pago</th>
                             </tr>
                         </thead>
                         <tbody id="historico-corpo" class="text-sm divide-y divide-gray-50 text-gray-600">
                             <tr>
-                                <td colspan="5" class="py-4 text-center text-gray-400 italic">Nenhum atendimento finalizado na rede.</td>
+                                <td colspan="5" class="py-4 text-center text-gray-400 italic">Nenhum atendimento salvo no banco de dados.</td>
                             </tr>
                         </tbody>
                     </table>
@@ -180,25 +210,24 @@
     </main>
 
     <script>
-        // CONFIGURAÇÃO DO SUPABASE COM AS SUAS CREDENCIAIS
+        // CONFIGURAÇÕES DO SEU SUPABASE
         const SUPABASE_URL = "https://qfavuilkdddpiuroleww.supabase.co";
         const SUPABASE_KEY = "sb_publishable_t3T621tJpNU-exRP7GM5BQ__QpVIeQa";
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let sessoesAtivasLocal = [];
         let historicoLocal = [];
+        let modoAtual = 'selecao'; // 'selecao', 'operador', 'admin'
+        let brinquedoOperador = ''; // Guarda qual brinquedo este celular está controlando
 
-        // Inicializar aplicação
         async function init() {
             lucide.createIcons();
+            renderizarTelaPorModo();
             await carregarDadosDoBanco();
             inscreverNoRealtime();
-            
-            // Loop para atualizar a contagem visual dos cronômetros a cada 1 segundo
             setInterval(calcularTemposRegressivos, 1000);
         }
 
-        // Carrega dados iniciais do Supabase
         async function carregarDadosDoBanco() {
             try {
                 const { data, error } = await _supabase
@@ -208,68 +237,81 @@
 
                 if (error) throw error;
 
-                // Separar o que é ativo do que está finalizado
                 sessoesAtivasLocal = data.filter(s => s.status === 'ativo');
                 historicoLocal = data.filter(s => s.status === 'finalizado');
 
                 renderCards();
                 renderDashboard();
             } catch (err) {
-                console.error("Erro ao carregar dados:", err.message);
-                document.getElementById('status-conexao').textContent = "Erro de Conexão";
-                document.getElementById('status-conexao').className = "text-xl font-black text-red-600 mt-1";
+                console.error("Erro na carga de dados:", err.message);
             }
         }
 
-        // Inscreve o app para ouvir mudanças em tempo real (Realtime)
         function inscreverNoRealtime() {
             _supabase
                 .channel('mudancas-sessoes')
-                .on('postgres_changes', { event: '*', filter: 'status=eq.ativo', schema: 'public', table: 'sessoes' }, () => {
-                    carregarDadosDoBanco();
-                })
-                .on('postgres_changes', { event: 'update', filter: 'status=eq.finalizado', schema: 'public', table: 'sessoes' }, () => {
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'sessoes' }, () => {
                     carregarDadosDoBanco();
                 })
                 .subscribe();
         }
 
-        // Alternar abas
-        function switchTab(tab) {
-            const tabOperacao = document.getElementById('tab-operacao');
-            const tabDashboard = document.getElementById('tab-dashboard');
-            const btnOperacao = document.getElementById('btn-tab-operacao');
-            const btnDashboard = document.getElementById('btn-tab-dashboard');
+        function renderizarTelaPorModo() {
+            document.getElementById('tela-selecao').classList.add('hidden');
+            document.getElementById('tela-operador').classList.add('hidden');
+            document.getElementById('tela-admin').classList.add('hidden');
+            document.getElementById('btn-sair').classList.add('hidden');
 
-            if (tab === 'operacao') {
-                tabOperacao.classList.remove('hidden');
-                tabDashboard.classList.add('hidden');
-                btnOperacao.className = "bg-orange-700 font-bold px-4 py-2 rounded-xl transition";
-                btnDashboard.className = "hover:bg-orange-600 font-bold px-4 py-2 rounded-xl transition";
-            } else {
-                tabOperacao.classList.add('hidden');
-                tabDashboard.classList.remove('hidden');
-                btnOperacao.className = "hover:bg-orange-600 font-bold px-4 py-2 rounded-xl transition";
-                btnDashboard.className = "bg-orange-700 font-bold px-4 py-2 rounded-xl transition";
-                renderDashboard();
+            const badge = document.getElementById('badge-modo-tela');
+
+            if (modoAtual === 'selecao') {
+                document.getElementById('tela-selecao').classList.remove('hidden');
+                badge.textContent = "Início";
+                badge.className = "ml-2 bg-white/20 px-2.5 py-0.5 rounded-full text-xs font-bold uppercase";
+            } else if (modoAtual === 'operador') {
+                document.getElementById('tela-operador').classList.remove('hidden');
+                document.getElementById('btn-sair').classList.remove('hidden');
+                document.getElementById('label-brinquedo-form').textContent = brinquedoOperador;
+                document.getElementById('label-brinquedo-painel').textContent = brinquedoOperador;
+                badge.textContent = `Op: ${brinquedoOperador}`;
+                badge.className = "ml-2 bg-blue-600 text-white px-2.5 py-0.5 rounded-full text-xs font-bold uppercase border border-blue-400";
+            } else if (modoAtual === 'admin') {
+                document.getElementById('tela-admin').classList.remove('hidden');
+                document.getElementById('btn-sair').classList.remove('hidden');
+                badge.textContent = "Administração";
+                badge.className = "ml-2 bg-purple-600 text-white px-2.5 py-0.5 rounded-full text-xs font-bold uppercase border border-purple-400";
             }
+            lucide.createIcons();
         }
 
-        function aoMudarBrinquedoOperador() {
-            const brinquedoSelecionado = document.getElementById('filtro-brinquedo-operador').value;
-            const selectFormulario = document.getElementById('brinquedo');
-            if(brinquedoSelecionado !== "Todos") {
-                selectFormulario.value = brinquedoSelecionado;
-            }
+        function entrarComoOperador(brinquedo) {
+            modoAtual = 'operador';
+            brinquedoOperador = brinquedo;
+            renderizarTelaPorModo();
             renderCards();
         }
 
-        // Inserir dados diretamente no Supabase
+        function pedirSenhaAdmin() {
+            const senha = prompt("Digite a senha do Administrador:");
+            if (senha === "admin123") { // Você pode trocar a senha padrão aqui!
+                modoAtual = 'admin';
+                renderizarTelaPorModo();
+                renderDashboard();
+            } else {
+                alert("Senha incorreta!");
+            }
+        }
+
+        function logout() {
+            modoAtual = 'selecao';
+            brinquedoOperador = '';
+            renderizarTelaPorModo();
+        }
+
         async function addCriança(event) {
             event.preventDefault();
 
             const nome = document.getElementById('nome-crianca').value;
-            const brinquedo = document.getElementById('brinquedo').value;
             const minutos = parseInt(document.getElementById('tempo-minutos').value);
             const valor = parseFloat(document.getElementById('valor-cobrado').value);
             const pagamento = document.getElementById('pagamento').value;
@@ -279,7 +321,7 @@
                     .from('sessoes')
                     .insert([{
                         nome,
-                        brinquedo,
+                        brinquedo: brinquedoOperador, // Salva direto o brinquedo daquela tela
                         minutos_iniciais: minutos,
                         valor,
                         pagamento,
@@ -287,15 +329,12 @@
                     }]);
 
                 if (error) throw error;
-
                 document.getElementById('form-checkin').reset();
-                aoMudarBrinquedoOperador();
             } catch (err) {
-                alert("Erro ao salvar no servidor: " + err.message);
+                alert("Erro ao salvar: " + err.message);
             }
         }
 
-        // Atualizar status no Supabase para finalizado
         async function finalizarSessao(id) {
             try {
                 const { error } = await _supabase
@@ -309,24 +348,16 @@
             }
         }
 
-        // Calcula a contagem regressiva baseada no horário do servidor remoto
         function calcularTemposRegressivos() {
-            let houveMudanca = false;
             const agora = new Date();
-
             sessoesAtivasLocal.forEach(sessao => {
                 const inicio = new Date(sessao.inicio_em);
                 const tempoTotalSegundos = sessao.minutos_iniciais * 60;
                 const segundosPassados = Math.floor((agora - inicio) / 1000);
-                
-                const tempoRestante = tempoTotalSegundos - segundosPassados;
-                
-                // Armazena temporariamente para renderização
-                sessao.tempoRestanteCalculado = tempoRestante;
-                sessao.porcentagemCalculada = (tempoRestante / tempoTotalSegundos) * 100;
+                sessao.tempoRestanteCalculado = tempoTotalSegundos - segundosPassados;
+                sessao.porcentagemCalculada = (sessao.tempoRestanteCalculado / tempoTotalSegundos) * 100;
             });
-
-            renderCards();
+            if (modoAtual === 'operador') renderCards();
         }
 
         function formatarTempo(segundos) {
@@ -336,25 +367,26 @@
             return `${min.toString().padStart(2, '0')}:${seg.toString().padStart(2, '0')}`;
         }
 
+        // Renderiza apenas os cards do brinquedo selecionado!
         function renderCards() {
             const container = document.getElementById('container-cronometros');
             const semCriancas = document.getElementById('sem-criancas');
             const contadorAtivas = document.getElementById('contador-ativas');
-            const filtroBrinquedo = document.getElementById('filtro-brinquedo-operador').value;
 
             const cardsAtivos = container.querySelectorAll('.card-cronometro');
             cardsAtivos.forEach(card => card.remove());
 
-            const sessoesFiltradas = sessoesAtivasLocal.filter(s => filtroBrinquedo === "Todos" || s.brinquedo === filtroBrinquedo);
+            // FILTRO CRÍTICO: Mostra apenas se bater com o brinquedo do operador logado
+            const sessoesFiltradas = sessoesAtivasLocal.filter(s => s.brinquedo === brinquedoOperador);
 
             if (sessoesFiltradas.length === 0) {
                 semCriancas.classList.remove('hidden');
-                contadorAtivas.textContent = `0 Ativas (${filtroBrinquedo})`;
+                contadorAtivas.textContent = `0 Ativas`;
                 return;
             }
 
             semCriancas.classList.add('hidden');
-            contadorAtivas.textContent = `${sessoesFiltradas.length} Ativas (${filtroBrinquedo})`;
+            contadorAtivas.textContent = `${sessoesFiltradas.length} Ativas`;
 
             sessoesFiltradas.forEach(sessao => {
                 const tempoRestante = sessao.tempoRestanteCalculado !== undefined ? sessao.tempoRestanteCalculado : (sessao.minutos_iniciais * 60);
@@ -380,51 +412,58 @@
                         <div class="flex justify-between items-start">
                             <div>
                                 <h3 class="font-black text-gray-900 text-lg tracking-tight">${sessao.nome}</h3>
-                                <div class="flex flex-wrap gap-2 mt-1">
-                                    <span class="text-xs bg-orange-50 text-orange-700 font-bold px-2.5 py-0.5 rounded-xl flex items-center">
-                                        <i data-lucide="gamepad-2" class="w-3 h-3 mr-1"></i> ${sessao.brinquedo}
-                                    </span>
-                                    <span class="text-xs bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-xl font-black">
-                                        R$ ${parseFloat(sessao.valor).toFixed(2)}
-                                    </span>
-                                </div>
+                                <span class="inline-block mt-1 text-xs bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-xl font-black">
+                                    R$ ${parseFloat(sessao.valor).toFixed(2)} (${sessao.pagamento})
+                                </span>
                             </div>
                             <button onclick="finalizarSessao(${sessao.id})" class="bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white px-3 py-2 text-xs font-black rounded-xl transition flex items-center space-x-1">
                                 <i data-lucide="check" class="w-4 h-4"></i> <span>Zerar</span>
                             </button>
                         </div>
-
                         <div class="my-5 text-center">
                             <span class="text-3xl font-mono font-black tracking-widest ${piscarClasse}">
                                 ${formatarTempo(tempoRestante)}
                             </span>
                         </div>
                     </div>
-
                     <div class="w-full bg-gray-100 rounded-full h-2.5 mt-1">
                         <div class="${corProgresso} h-2.5 rounded-full transition-all" style="width: ${Math.max(0, porcetagemRestante)}%"></div>
                     </div>
                 `;
                 container.appendChild(card);
             });
-
             lucide.createIcons();
         }
 
+        // Renderiza as somas detalhadas por tipo de pagamento no Admin
         function renderDashboard() {
-            const totalFaturamento = historicoLocal.reduce((acc, curr) => acc + parseFloat(curr.valor), 0);
-            const totalAtendimentos = historicoLocal.length;
-            const totalTempo = historicoLocal.reduce((acc, curr) => acc + curr.minutos_iniciais, 0);
+            // Somas por tipo de pagamento (Considerando histórico)
+            const pix = historicoLocal.filter(s => s.pagamento === 'PIX').reduce((a, c) => a + parseFloat(c.valor), 0);
+            const dinheiro = historicoLocal.filter(s => s.pagamento === 'Dinheiro').reduce((a, c) => a + parseFloat(c.valor), 0);
+            const cartao = historicoLocal.filter(s => s.pagamento === 'Cartão').reduce((a, c) => a + parseFloat(c.valor), 0);
+            const total = pix + dinheiro + cartao;
 
-            document.getElementById('dash-faturamento').textContent = `R$ ${totalFaturamento.toFixed(2)}`;
-            document.getElementById('dash-atendimentos').textContent = `${totalAtendimentos} concluídos`;
-            document.getElementById('dash-tempo').textContent = `${totalTempo} min`;
+            // Somas por brinquedo
+            const faturamentoPula = historicoLocal.filter(s => s.brinquedo === 'Pula-Pula').reduce((a, c) => a + parseFloat(c.valor), 0);
+            const faturamentoEscorregador = historicoLocal.filter(s => s.brinquedo === 'Escorregador').reduce((a, c) => a + parseFloat(c.valor), 0);
+            const faturamentoBolinhas = historicoLocal.filter(s => s.brinquedo === 'Piscina de Bolinhas').reduce((a, c) => a + parseFloat(c.valor), 0);
+
+            document.getElementById('dash-faturamento').textContent = `R$ ${total.toFixed(2)}`;
+            document.getElementById('dash-pix').textContent = `R$ ${pix.toFixed(2)}`;
+            document.getElementById('dash-dinheiro').textContent = `R$ ${dinheiro.toFixed(2)}`;
+            document.getElementById('dash-cartao').textContent = `R$ ${cartao.toFixed(2)}`;
+
+            document.getElementById('faturamento-pula').textContent = `R$ ${faturamentoPula.toFixed(2)}`;
+            document.getElementById('faturamento-escorregador').textContent = `R$ ${faturamentoEscorregador.toFixed(2)}`;
+            document.getElementById('faturamento-bolinhas').textContent = `R$ ${faturamentoBolinhas.toFixed(2)}`;
+
+            document.getElementById('dash-atendimentos').textContent = `${historicoLocal.length} Concluídos`;
 
             const corpoTabela = document.getElementById('historico-corpo');
             corpoTabela.innerHTML = '';
 
             if (historicoLocal.length === 0) {
-                corpoTabela.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-gray-400 italic">Nenhum atendimento finalizado na rede.</td></tr>`;
+                corpoTabela.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-gray-400 italic">Nenhum atendimento finalizado.</td></tr>`;
                 return;
             }
 
@@ -433,7 +472,7 @@
                 tr.className = "border-b border-gray-50 hover:bg-gray-50/50 transition text-gray-700";
                 tr.innerHTML = `
                     <td class="py-3 font-bold">${item.nome}</td>
-                    <td class="py-3 font-medium">${item.brinquedo}</td>
+                    <td class="py-3 font-medium"><span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md text-xs">${item.brinquedo}</span></td>
                     <td class="py-3 font-mono">${item.minutos_iniciais} min</td>
                     <td class="py-3 font-black text-emerald-600">R$ ${parseFloat(item.valor).toFixed(2)}</td>
                     <td class="py-3"><span class="bg-gray-100 text-gray-600 px-2.5 py-0.5 rounded-xl text-xs font-bold">${item.pagamento}</span></td>
@@ -442,7 +481,6 @@
             });
         }
 
-        // Executa ao carregar a página
         window.onload = init;
     </script>
 </body>
