@@ -3,13 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KauêKids - Sistema União de Parques</title>
+    <title>KauêKids - Sistema União de Parques Pro</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- SDK do Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-slate-50 font-sans text-gray-800 antialiased">
 
+    <!-- BARRA DE NAVEGAÇÃO -->
     <nav class="bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16">
@@ -27,8 +31,10 @@
         </div>
     </nav>
 
+    <!-- CONTEÚDO DINÂMICO DAS TELAS -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         
+        <!-- ================= TELA 1: SELEÇÃO DE MODO (HOME INICIAL) ================= -->
         <section id="tela-selecao" class="hidden max-w-xl mx-auto py-12 space-y-8">
             <div class="text-center">
                 <h1 class="text-3xl font-black text-gray-900 tracking-tight">Bem-vindo ao KauêKids</h1>
@@ -36,6 +42,7 @@
             </div>
             
             <div class="grid grid-cols-1 gap-4">
+                <!-- Acesso Admin -->
                 <button onclick="pedirSenhaAdmin()" class="bg-white hover:border-orange-500 border-2 border-gray-100 p-6 rounded-3xl shadow-sm text-left transition flex items-center space-x-4 group">
                     <div class="p-4 bg-orange-100 text-orange-600 rounded-2xl group-hover:bg-orange-500 group-hover:text-white transition"><i data-lucide="shield-check" class="w-6 h-6"></i></div>
                     <div>
@@ -50,22 +57,17 @@
                     <div class="flex-grow border-t border-gray-200"></div>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <button onclick="entrarComoOperador('Pula-Pula')" class="bg-white hover:bg-orange-50 border border-gray-200 p-4 rounded-2xl text-center transition font-bold text-gray-700 flex flex-col items-center space-y-2">
-                        <i data-lucide="smile" class="text-orange-500 w-6 h-6"></i> <span>Pula-Pula</span>
-                    </button>
-                    <button onclick="entrarComoOperador('Escorregador')" class="bg-white hover:bg-orange-50 border border-gray-200 p-4 rounded-2xl text-center transition font-bold text-gray-700 flex flex-col items-center space-y-2">
-                        <i data-lucide="zap" class="text-amber-500 w-6 h-6"></i> <span>Escorregador</span>
-                    </button>
-                    <button onclick="entrarComoOperador('Piscina de Bolinhas')" class="bg-white hover:bg-orange-50 border border-gray-200 p-4 rounded-2xl text-center transition font-bold text-gray-700 flex flex-col items-center space-y-2">
-                        <i data-lucide="circle-dot" class="text-blue-500 w-6 h-6"></i> <span>Piscina de Bolinhas</span>
-                    </button>
+                <!-- Lista Dinâmica de Brinquedos gerada pelo Banco -->
+                <div id="lista-brinquedos-home" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <!-- Gerado via JavaScript -->
                 </div>
             </div>
         </section>
 
+        <!-- ================= TELA 2: OPERAÇÃO EXCLUSIVA DO BRINQUEDO ================= -->
         <section id="tela-operador" class="hidden space-y-6">
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- FORMULÁRIO DE ENTRADA -->
                 <div class="bg-white p-6 rounded-3xl shadow-sm border border-orange-100 h-fit">
                     <div class="flex items-center space-x-2 mb-6">
                         <i data-lucide="user-plus" class="text-orange-500 w-5 h-5"></i>
@@ -111,6 +113,7 @@
                     </form>
                 </div>
                 
+                <!-- MONITOR FILTRADO -->
                 <div class="lg:col-span-2 space-y-4">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center space-x-2">
@@ -130,11 +133,11 @@
             </div>
         </section>
 
+        <!-- ================= TELA 3: PAINEL ADMINISTRATIVO ISOLADO ================= -->
         <section id="tela-admin" class="hidden space-y-6">
-            <div class="flex items-center justify-between">
-                <h2 class="text-2xl font-black text-gray-900">Painel do Administrador Geral</h2>
-            </div>
+            <h2 class="text-2xl font-black text-gray-900">Painel do Administrador Geral</h2>
             
+            <!-- DETALHAMENTO DE RECEITA -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div class="bg-white p-5 rounded-3xl shadow-sm border border-emerald-100 flex items-center justify-between">
                     <div>
@@ -166,77 +169,92 @@
                 </div>
             </div>
 
-            <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="p-4 bg-orange-50/50 rounded-2xl border border-orange-100 text-center">
-                    <span class="text-xs font-bold text-orange-600 uppercase">Pula-Pula</span>
-                    <span id="faturamento-pula" class="block text-xl font-black mt-1">R$ 0,00</span>
+            <!-- ADICIONAR E VER FATURAMENTO POR BRINQUEDO -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- FORMULÁRIO DE GESTÃO DE BRINQUEDOS (RECURSO NOVO) -->
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-purple-100 h-fit space-y-4">
+                    <div class="flex items-center space-x-2">
+                        <i data-lucide="plus-circle" class="text-purple-600 w-5 h-5"></i>
+                        <h3 class="font-black text-gray-800 text-base">Cadastrar Novo Brinquedo</h3>
+                    </div>
+                    <form onsubmit="addNovoBrinquedoNoBanco(event)" class="flex gap-2">
+                        <input type="text" id="input-novo-brinquedo" required class="flex-1 px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 bg-gray-50 text-sm font-medium" placeholder="Ex: Touro Mecânico">
+                        <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white font-bold px-4 py-2 rounded-xl text-sm transition">Salvar</button>
+                    </form>
+                    
+                    <div class="border-t border-gray-100 pt-3">
+                        <span class="text-xs font-bold uppercase tracking-wider text-gray-400 block mb-2">Faturamento de Cada Um</span>
+                        <div id="lista-faturamentos-brinquedos" class="space-y-2 text-sm">
+                            <!-- Inserido dinamicamente -->
+                        </div>
+                    </div>
                 </div>
-                <div class="p-4 bg-amber-50/50 rounded-2xl border border-amber-100 text-center">
-                    <span class="text-xs font-bold text-amber-600 uppercase">Escorregador</span>
-                    <span id="faturamento-escorregador" class="block text-xl font-black mt-1">R$ 0,00</span>
-                </div>
-                <div class="p-4 bg-blue-50/50 rounded-2xl border border-blue-100 text-center">
-                    <span class="text-xs font-bold text-blue-600 uppercase">Piscina de Bolinhas</span>
-                    <span id="faturamento-bolinhas" class="block text-xl font-black mt-1">R$ 0,00</span>
-                </div>
-            </div>
 
-            <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="font-black text-gray-800 text-lg">Histórico Geral Unificado</h3>
-                    <span id="dash-atendimentos" class="bg-slate-100 text-slate-700 px-3 py-1 rounded-xl text-xs font-bold">0 Concluídos</span>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="border-b border-gray-100 text-xs font-bold uppercase tracking-wider text-gray-400">
-                                <th class="pb-3">Criança</th>
-                                <th class="pb-3">Brinquedo</th>
-                                <th class="pb-3">Tempo Inicial</th>
-                                <th class="pb-3">Valor</th>
-                                <th class="pb-3">Meio Pago</th>
-                            </tr>
-                        </thead>
-                        <tbody id="historico-corpo" class="text-sm divide-y divide-gray-50 text-gray-600">
-                            <tr>
-                                <td colspan="5" class="py-4 text-center text-gray-400 italic">Nenhum atendimento salvo no banco de dados.</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <!-- HISTÓRICO GLOBAL -->
+                <div class="lg:col-span-2 bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-black text-gray-800 text-lg">Histórico Geral Unificado</h3>
+                        <span id="dash-atendimentos" class="bg-slate-100 text-slate-700 px-3 py-1 rounded-xl text-xs font-bold">0 Concluídos</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-gray-100 text-xs font-bold uppercase tracking-wider text-gray-400">
+                                    <th class="pb-3">Criança</th>
+                                    <th class="pb-3">Brinquedo</th>
+                                    <th class="pb-3">Tempo Inicial</th>
+                                    <th class="pb-3">Valor</th>
+                                    <th class="pb-3">Meio Pago</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historico-corpo" class="text-sm divide-y divide-gray-50 text-gray-600">
+                                <tr>
+                                    <td colspan="5" class="py-4 text-center text-gray-400 italic">Carregando histórico...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </section>
-
     </main>
 
     <script>
-        // CONFIGURAÇÕES DO SEU SUPABASE
         const SUPABASE_URL = "https://qfavuilkdddpiuroleww.supabase.co";
         const SUPABASE_KEY = "sb_publishable_t3T621tJpNU-exRP7GM5BQ__QpVIeQa";
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let sessoesAtivasLocal = [];
         let historicoLocal = [];
-        let modoAtual = 'selecao'; // 'selecao', 'operador', 'admin'
-        let brinquedoOperador = ''; // Guarda qual brinquedo este celular está controlando
+        let listaBrinquedosLocal = [];
+        let modoAtual = 'selecao';
+        let brinquedoOperador = '';
 
         async function init() {
             lucide.createIcons();
             renderizarTelaPorModo();
+            await carregarBrinquedos();
             await carregarDadosDoBanco();
             inscreverNoRealtime();
             setInterval(calcularTemposRegressivos, 1000);
         }
 
+        // CARREGA A LISTA DE BRINQUEDOS DO BANCO
+        async function carregarBrinquedos() {
+            try {
+                const { data, error } = await _supabase.from('brinquedos').select('*').order('nome', { ascending: true });
+                if (error) throw error;
+                listaBrinquedosLocal = data;
+                renderizarOpcoesBrinquedos();
+            } catch (err) {
+                console.error("Erro ao carregar brinquedos:", err.message);
+            }
+        }
+
         async function carregarDadosDoBanco() {
             try {
-                const { data, error } = await _supabase
-                    .from('sessoes')
-                    .select('*')
-                    .order('created_at', { ascending: false });
-
+                const { data, error } = await _supabase.from('sessoes').select('*').order('created_at', { ascending: false });
                 if (error) throw error;
-
                 sessoesAtivasLocal = data.filter(s => s.status === 'ativo');
                 historicoLocal = data.filter(s => s.status === 'finalizado');
 
@@ -249,11 +267,42 @@
 
         function inscreverNoRealtime() {
             _supabase
-                .channel('mudancas-sessoes')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'sessoes' }, () => {
-                    carregarDadosDoBanco();
-                })
+                .channel('mudancas-parque')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'sessoes' }, () => carregarDadosDoBanco())
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'brinquedos' }, () => carregarBrinquedos())
                 .subscribe();
+        }
+
+        // MONTA OS BOTÕES DA HOME E O COMPONENTE DO ADMIN DINAMICAMENTE
+        function renderizarOpcoesBrinquedos() {
+            const containerHome = document.getElementById('lista-brinquedos-home');
+            containerHome.innerHTML = '';
+
+            listaBrinquedosLocal.forEach(b => {
+                const btn = document.createElement('button');
+                btn.onclick = () => entrarComoOperador(b.nome);
+                btn.className = "bg-white hover:bg-orange-50 border border-gray-200 p-4 rounded-2xl text-left transition font-bold text-gray-700 flex items-center space-x-3";
+                btn.innerHTML = `<div class="p-2 bg-orange-100 rounded-xl text-orange-600"><i data-lucide="gamepad-2" class="w-5 h-5"></i></div> <span class="truncate">${b.nome}</span>`;
+                containerHome.appendChild(btn);
+            });
+            lucide.createIcons();
+        }
+
+        // CRIA NOVO BRINQUEDO VIA ADMIN
+        async function addNovoBrinquedoNoBanco(event) {
+            event.preventDefault();
+            const input = document.getElementById('input-novo-brinquedo');
+            const nome = input.value.trim();
+
+            try {
+                const { error } = await _supabase.from('brinquedos').insert([{ nome }]);
+                if (error) throw error;
+                input.value = '';
+                await carregarBrinquedos();
+                renderDashboard();
+            } catch (err) {
+                alert("Erro ou brinquedo já existente: " + err.message);
+            }
         }
 
         function renderizarTelaPorModo() {
@@ -293,7 +342,7 @@
 
         function pedirSenhaAdmin() {
             const senha = prompt("Digite a senha do Administrador:");
-            if (senha === "admin123") { // Você pode trocar a senha padrão aqui!
+            if (senha === "admin123") {
                 modoAtual = 'admin';
                 renderizarTelaPorModo();
                 renderDashboard();
@@ -310,24 +359,15 @@
 
         async function addCriança(event) {
             event.preventDefault();
-
             const nome = document.getElementById('nome-crianca').value;
             const minutos = parseInt(document.getElementById('tempo-minutos').value);
             const valor = parseFloat(document.getElementById('valor-cobrado').value);
             const pagamento = document.getElementById('pagamento').value;
 
             try {
-                const { error } = await _supabase
-                    .from('sessoes')
-                    .insert([{
-                        nome,
-                        brinquedo: brinquedoOperador, // Salva direto o brinquedo daquela tela
-                        minutos_iniciais: minutos,
-                        valor,
-                        pagamento,
-                        status: 'ativo'
-                    }]);
-
+                const { error } = await _supabase.from('sessoes').insert([{
+                    nome, brinquedo: brinquedoOperador, minutos_iniciais: minutos, valor, pagamento, status: 'ativo'
+                }]);
                 if (error) throw error;
                 document.getElementById('form-checkin').reset();
             } catch (err) {
@@ -337,11 +377,7 @@
 
         async function finalizarSessao(id) {
             try {
-                const { error } = await _supabase
-                    .from('sessoes')
-                    .update({ status: 'finalizado' })
-                    .eq('id', id);
-
+                const { error } = await _supabase.from('sessoes').update({ status: 'finalizado' }).eq('id', id);
                 if (error) throw error;
             } catch (err) {
                 alert("Erro ao finalizar sessão: " + err.message);
@@ -367,7 +403,6 @@
             return `${min.toString().padStart(2, '0')}:${seg.toString().padStart(2, '0')}`;
         }
 
-        // Renderiza apenas os cards do brinquedo selecionado!
         function renderCards() {
             const container = document.getElementById('container-cronometros');
             const semCriancas = document.getElementById('sem-criancas');
@@ -376,7 +411,6 @@
             const cardsAtivos = container.querySelectorAll('.card-cronometro');
             cardsAtivos.forEach(card => card.remove());
 
-            // FILTRO CRÍTICO: Mostra apenas se bater com o brinquedo do operador logado
             const sessoesFiltradas = sessoesAtivasLocal.filter(s => s.brinquedo === brinquedoOperador);
 
             if (sessoesFiltradas.length === 0) {
@@ -435,29 +469,28 @@
             lucide.createIcons();
         }
 
-        // Renderiza as somas detalhadas por tipo de pagamento no Admin
         function renderDashboard() {
-            // Somas por tipo de pagamento (Considerando histórico)
             const pix = historicoLocal.filter(s => s.pagamento === 'PIX').reduce((a, c) => a + parseFloat(c.valor), 0);
             const dinheiro = historicoLocal.filter(s => s.pagamento === 'Dinheiro').reduce((a, c) => a + parseFloat(c.valor), 0);
             const cartao = historicoLocal.filter(s => s.pagamento === 'Cartão').reduce((a, c) => a + parseFloat(c.valor), 0);
             const total = pix + dinheiro + cartao;
-
-            // Somas por brinquedo
-            const faturamentoPula = historicoLocal.filter(s => s.brinquedo === 'Pula-Pula').reduce((a, c) => a + parseFloat(c.valor), 0);
-            const faturamentoEscorregador = historicoLocal.filter(s => s.brinquedo === 'Escorregador').reduce((a, c) => a + parseFloat(c.valor), 0);
-            const faturamentoBolinhas = historicoLocal.filter(s => s.brinquedo === 'Piscina de Bolinhas').reduce((a, c) => a + parseFloat(c.valor), 0);
 
             document.getElementById('dash-faturamento').textContent = `R$ ${total.toFixed(2)}`;
             document.getElementById('dash-pix').textContent = `R$ ${pix.toFixed(2)}`;
             document.getElementById('dash-dinheiro').textContent = `R$ ${dinheiro.toFixed(2)}`;
             document.getElementById('dash-cartao').textContent = `R$ ${cartao.toFixed(2)}`;
 
-            document.getElementById('faturamento-pula').textContent = `R$ ${faturamentoPula.toFixed(2)}`;
-            document.getElementById('faturamento-escorregador').textContent = `R$ ${faturamentoEscorregador.toFixed(2)}`;
-            document.getElementById('faturamento-bolinhas').textContent = `R$ ${faturamentoBolinhas.toFixed(2)}`;
-
-            document.getElementById('dash-atendimentos').textContent = `${historicoLocal.length} Concluídos`;
+            // LISTAGEM DINÂMICA DE VALORES POR BRINQUEDO NO ADMIN
+            const containerFaturamentos = document.getElementById('lista-faturamentos-brinquedos');
+            containerFaturamentos.innerHTML = '';
+            
+            listaBrinquedosLocal.forEach(b => {
+                const fat = historicoLocal.filter(s => s.brinquedo === b.nome).reduce((a, c) => a + parseFloat(c.valor), 0);
+                const div = document.createElement('div');
+                div.className = "flex justify-between items-center bg-gray-50 p-2.5 rounded-xl border border-gray-100";
+                div.innerHTML = `<span class="font-bold text-gray-700">${b.nome}</span> <span class="font-black text-slate-900">R$ ${fat.toFixed(2)}</span>`;
+                containerFaturamentos.appendChild(div);
+            });
 
             const corpoTabela = document.getElementById('historico-corpo');
             corpoTabela.innerHTML = '';
