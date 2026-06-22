@@ -1,8 +1,9 @@
-const CACHE_NAME = 'kauekids-cache-v1';
+const CACHE_NAME = 'kauekids-cache-v2'; // Mudei a versão para forçar o celular a atualizar
 const assets = [
   '/',
   '/index.html',
-  '/manifest.json'
+  '/manifest.json',
+  '/imagem.png'
 ];
 
 // Instalar o Service Worker e guardar a estrutura básica no cache
