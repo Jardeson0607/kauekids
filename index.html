@@ -251,7 +251,6 @@
             _supabase
                 .channel('mudancas-parque')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'sessoes' }, async () => {
-                    // Quando houver mudança em tempo real, recarrega e recalcula tudo na hora
                     await carregarDadosDoBanco();
                 })
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'brinquedos' }, () => carregarBrinquedos())
@@ -347,9 +346,18 @@
             const valor = parseFloat(document.getElementById('valor-cobrado').value);
             const pagamento = document.getElementById('pagamento').value;
 
+            // CRÍTICO: O próprio dispositivo define a string ISO correta para evitar divergências de fuso horário
+            const isoDataLocal = new Date().toISOString();
+
             try {
                 const { error } = await _supabase.from('sessoes').insert([{
-                    nome, brinquedo: brinquedoOperador, minutos_iniciais: minutos, valor, pagamento, status: 'ativo'
+                    nome, 
+                    brinquedo: brinquedoOperador, 
+                    minutos_iniciais: minutos, 
+                    valor, 
+                    pagamento, 
+                    status: 'ativo',
+                    inicio_em: isoDataLocal
                 }]);
                 if (error) throw error;
                 document.getElementById('form-checkin').reset();
@@ -370,8 +378,7 @@
         function atualizarLogicaDeContagem() {
             const agora = new Date();
             sessoesAtivasLocal.forEach(sessao => {
-                // Força o parse seguro independente de como a string venha do realtime
-                const inicio = new Date(sessao.inicio_em.replace(' ', 'T'));
+                const inicio = new Date(sessao.inicio_em);
                 const tempoTotalSegundos = sessao.minutos_iniciais * 60;
                 const segundosPassados = Math.floor((agora - inicio) / 1000);
                 
@@ -412,13 +419,14 @@
             contadorAtivas.textContent = `${sessoesFiltradas.length} Ativas`;
 
             sessoesFiltradas.forEach(sessao => {
-                // Cálculo de emergência preventiva caso os segundos ainda estejam processando
                 let tempoRestante = sessao.tempoRestanteCalculado;
+                
+                // Fallback de segurança milimétrica caso o loop ainda não tenha rodado
                 if (tempoRestante === undefined || isNaN(tempoRestante)) {
                     const agora = new Date();
-                    const inicio = new Date(sessao.inicio_em.replace(' ', 'T'));
+                    const inicio = new Date(sessao.inicio_em);
                     const totalSegundos = sessao.minutos_iniciais * 60;
-                    tempoRestante = totalSegundos - Math.floor((agora - inicio) / 1000);
+                    tempoRestante = totalTotalSegundos = totalSegundos - Math.floor((agora - inicio) / 1000);
                 }
                 
                 let porcetagemRestante = sessao.porcentagemCalculada !== undefined && !isNaN(sessao.porcentagemCalculada) ? sessao.porcentagemCalculada : 100;
@@ -468,7 +476,7 @@
 
         function renderDashboard() {
             const pix = historicoLocal.filter(s => s.pagamento === 'PIX').reduce((a, c) => a + parseFloat(c.valor), 0);
-            const dinero = dinheiro = historicoLocal.filter(s => s.pagamento === 'Dinheiro').reduce((a, c) => a + parseFloat(c.valor), 0);
+            const dinheiro = historicoLocal.filter(s => s.pagamento === 'Dinheiro').reduce((a, c) => a + parseFloat(c.valor), 0);
             const cartao = historicoLocal.filter(s => s.pagamento === 'Cartão').reduce((a, c) => a + parseFloat(c.valor), 0);
             const total = pix + dinheiro + cartao;
 
