@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KauêKids - Sistema de Parques</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-amber-50/40 font-sans text-gray-800 antialiased">
+
+    <nav class="bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-2">
+                    <i data-lucide="sparkles" class="w-6 h-6 text-yellow-200 animate-bounce"></i>
+                    <span class="font-black text-2xl tracking-tight">Kauê<span class="text-yellow-200">Kids</span></span>
+                </div>
+                <div class="flex space-x-2 text-sm font-medium">
+                    <button onclick="switchTab('operacao')" id="btn-tab-operacao" class="bg-orange-700 font-bold px-4 py-2 rounded-xl transition">Operação</button>
+                    <button onclick="switchTab('dashboard')" id="btn-tab-dashboard" class="hover:bg-orange-600 font-bold px-4 py-2 rounded-xl transition">Dashboard</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="bg-orange-100 border-b border-orange-200 py-3">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2">
+            <div class="flex items-center space-x-2 text-orange-800 text-sm font-medium">
+                <i data-lucide="smartphone" class="w-4 h-4"></i>
+                <span>Dispositivo conectado como operador de:</span>
+            </div>
+            <select id="filtro-brinquedo-operador" onchange="aoMudarBrinquedoOperador()" class="bg-white text-orange-900 font-bold text-sm px-4 py-1.5 rounded-xl border border-orange-300 focus:outline-none focus:ring-2 focus:ring-orange-500">
+                <option value="Todos">Visualizar Todos os Brinquedos (Gerência)</option>
+                <option value="Pula-Pula">Pula-Pula</option>
+                <option value="Escorregador Inflável">Escorregador Inflável</option>
+                <option value="Piscina de Bolinhas">Piscina de Bolinhas</option>
+            </select>
+        </div>
+    </div>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        
+        <section id="tab-operacao" class="space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-orange-100 h-fit">
+                    <div class="flex items-center space-x-2 mb-6">
+                        <i data-lucide="baby" class="text-orange-500 w-6 h-6"></i>
+                        <h2 class="text-lg font-black text-gray-900">Nova Entrada</h2>
+                    </div>
+                    
+                    <form id="form-checkin" onsubmit="addCriança(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">Nome da Criança</label>
+                            <input type="text" id="nome-crianca" required class="w-full px-4 py-2.5 rounded-2xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 bg-gray-50 font-medium" placeholder="Ex: Lucas">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">Brinquedo Atual</label>
+                            <select id="brinquedo" class="w-full px-4 py-2.5 rounded-2xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 bg-gray-50 font-bold text-gray-700">
+                                <option value="Pula-Pula">Pula-Pula</option>
+                                <option value="Escorregador Inflável">Escorregador Inflável</option>
+                                <option value="Piscina de Bolinhas">Piscina de Bolinhas</option>
+                            </select>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">Tempo</label>
+                                <div class="relative">
+                                    <input type="number" id="tempo-minutos" min="1" required class="w-full pl-4 pr-12 py-2.5 rounded-2xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 bg-gray-50 font-black text-lg" placeholder="15">
+                                    <span class="absolute right-4 top-3 text-xs text-gray-400 font-bold">min</span>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">Valor</label>
+                                <div class="relative">
+                                    <span class="absolute left-4 top-3 text-sm text-gray-400 font-bold">R$</span>
+                                    <input type="number" id="valor-cobrado" min="0" step="0.01" required class="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 bg-gray-50 font-black text-lg" placeholder="10,00">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">Pagamento</label>
+                            <select id="pagamento" class="w-full px-4 py-2.5 rounded-2xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 bg-gray-50 font-medium">
+                                <option value="PIX">PIX</option>
+                                <option value="Dinheiro">Dinheiro</option>
+                                <option value="Cartão">Cartão</option>
+                            </select>
+                        </div>
+                        
+                        <button type="submit" class="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black py-3.5 px-4 rounded-2xl transition shadow-md shadow-orange-100 flex items-center justify-center space-x-2 text-base">
+                            <i data-lucide="play" class="w-5 h-5 fill-current"></i>
+                            <span>Soltar Cronômetro</span>
+                        </button>
+                    </form>
+                </div>
+                
+                <div class="lg:col-span-2 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-2">
+                            <i data-lucide="hourglass" class="text-orange-500 w-5 h-5"></i>
+                            <h2 class="text-lg font-black text-gray-900">Painel de Monitoramento</h2>
+                        </div>
+                        <span id="contador-ativas" class="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-black">0 Ativas</span>
+                    </div>
+                    
+                    <div id="container-cronometros" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div id="sem-criancas" class="col-span-full bg-white border border-dashed border-orange-200 rounded-3xl p-12 text-center text-gray-400">
+                            <i data-lucide="smile" class="w-12 h-12 mx-auto mb-3 text-orange-200"></i>
+                            <p class="font-bold text-gray-600">Nenhuma criança ativa para este brinquedo.</p>
+                            <p class="text-xs mt-1">Insira os dados no painel ao lado.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <section id="tab-dashboard" class="hidden space-y-6">
+            <h2 class="text-xl font-black text-gray-900">Painel Geral KauêKids</h2>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex items-center justify-between">
+                    <div>
+                        <span class="block text-xs font-bold uppercase tracking-wider text-gray-400">Arrecadação Total</span>
+                        <span id="dash-faturamento" class="text-2xl font-black text-gray-900 mt-1">R$ 0,00</span>
+                    </div>
+                    <div class="p-3 bg-emerald-50 rounded-2xl text-emerald-500"><i data-lucide="badge-dollar-sign"></i></div>
+                </div>
+                <div class="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex items-center justify-between">
+                    <div>
+                        <span class="block text-xs font-bold uppercase tracking-wider text-gray-400">Total Crianças</span>
+                        <span id="dash-atendimentos" class="text-2xl font-black text-gray-900 mt-1">0 cadastradas</span>
+                    </div>
+                    <div class="p-3 bg-orange-50 rounded-2xl text-orange-500"><i data-lucide="smile"></i></div>
+                </div>
+                <div class="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex items-center justify-between">
+                    <div>
+                        <span class="block text-xs font-bold uppercase tracking-wider text-gray-400">Minutos Rodados</span>
+                        <span id="dash-tempo" class="text-2xl font-black text-gray-900 mt-1">0 min</span>
+                    </div>
+                    <div class="p-3 bg-amber-50 rounded-2xl text-amber-500"><i data-lucide="timer"></i></div>
+                </div>
+                <div class="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex items-center justify-between">
+                    <div>
+                        <span class="block text-xs font-bold uppercase tracking-wider text-gray-400">Brinquedos Conectados</span>
+                        <span class="text-2xl font-black text-orange-600 mt-1">3 Ativos</span>
+                    </div>
+                    <div class="p-3 bg-purple-50 rounded-2xl text-purple-500"><i data-lucide="wifi"></i></div>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+                <h3 class="font-black text-gray-800 mb-4">Histórico Consolidado (Tempo Real)</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-gray-100 text-xs font-bold uppercase tracking-wider text-gray-400">
+                                <th class="pb-3">Criança</th>
+                                <th class="pb-3">Brinquedo</th>
+                                <th class="pb-3">Tempo</th>
+                                <th class="pb-3">Valor</th>
+                                <th class="pb-3">Pagamento</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historico-corpo" class="text-sm divide-y divide-gray-50 text-gray-600">
+                            <tr>
+                                <td colspan="5" class="py-4 text-center text-gray-400 italic">Nenhum atendimento finalizado na rede.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        lucide.createIcons();
+
+        let sessoes = [];
+        let historico = [];
+
+        // Alternar abas
+        function switchTab(tab) {
+            const tabOperacao = document.getElementById('tab-operacao');
+            const tabDashboard = document.getElementById('tab-dashboard');
+            const btnOperacao = document.getElementById('btn-tab-operacao');
+            const btnDashboard = document.getElementById('btn-tab-dashboard');
+
+            if (tab === 'operacao') {
+                tabOperacao.classList.remove('hidden');
+                tabDashboard.classList.add('hidden');
+                btnOperacao.className = "bg-orange-700 font-bold px-4 py-2 rounded-xl transition";
+                btnDashboard.className = "hover:bg-orange-600 font-bold px-4 py-2 rounded-xl transition";
+            } else {
+                tabOperacao.classList.add('hidden');
+                tabDashboard.classList.remove('hidden');
+                btnOperacao.className = "hover:bg-orange-600 font-bold px-4 py-2 rounded-xl transition";
+                btnDashboard.className = "bg-orange-700 font-bold px-4 py-2 rounded-xl transition";
+                renderDashboard();
+            }
+        }
+
+        // Quando o operador mudar o seletor de brinquedo do celular dele
+        function aoMudarBrinquedoOperador() {
+            const brinquedoSelecionado = document.getElementById('filtro-brinquedo-operador').value;
+            const selectFormulario = document.getElementById('brinquedo');
+            
+            // Facilita a vida do operador: muda automaticamente o formulário para o brinquedo dele
+            if(brinquedoSelecionado !== "Todos") {
+                selectFormulario.value = brinquedoSelecionado;
+            }
+            renderCards();
+        }
+
+        function addCriança(event) {
+            event.preventDefault();
+
+            const nome = document.getElementById('nome-crianca').value;
+            const brinquedo = document.getElementById('brinquedo').value;
+            const minutos = parseInt(document.getElementById('tempo-minutos').value);
+            const valor = parseFloat(document.getElementById('valor-cobrado').value);
+            const pagamento = document.getElementById('pagamento').value;
+            
+            const tempoEmSegundos = minutos * 60;
+            const id = Date.now();
+
+            const novaSessao = {
+                id: id,
+                nome: nome,
+                brinquedo: brinquedo,
+                minutosIniciais: minutos,
+                valor: valor,
+                pagamento: pagamento,
+                tempoRestante: tempoEmSegundos,
+                tempoTotal: tempoEmSegundos
+            };
+
+            sessoes.push(novaSessao);
+            document.getElementById('form-checkin').reset();
+            
+            // Mantém o brinquedo fixado se o operador tiver selecionado um específico
+            aoMudarBrinquedoOperador();
+        }
+
+        function finalizarSessao(id) {
+            const sessaoFinalizada = sessoes.find(s => s.id === id);
+            if (sessaoFinalizada) {
+                historico.push(sessaoFinalizada);
+            }
+            sessoes = sessoes.filter(s => s.id !== id);
+            renderCards();
+        }
+
+        function formatarTempo(segundos) {
+            const min = Math.floor(segundos / 60);
+            const seg = segundos % 60;
+            return `${min.toString().padStart(2, '0')}:${seg.toString().padStart(2, '0')}`;
+        }
+
+        function renderCards() {
+            const container = document.getElementById('container-cronometros');
+            const semCriancas = document.getElementById('sem-criancas');
+            const contadorAtivas = document.getElementById('contador-ativas');
+            const filtroBrinquedo = document.getElementById('filtro-brinquedo-operador').value;
+
+            const cardsAtivos = container.querySelectorAll('.card-cronometro');
+            cardsAtivos.forEach(card => card.remove());
+
+            // FILTRAGEM: Aqui está o segredo para cada celular ver só o seu brinquedo
+            const sessoesFiltradas = sessoes.filter(s => filtroBrinquedo === "Todos" || s.brinquedo === filtroBrinquedo);
+
+            if (sessoesFiltradas.length === 0) {
+                semCriancas.classList.remove('hidden');
+                contadorAtivas.textContent = `0 Ativas (${filtroBrinquedo})`;
+                return;
+            }
+
+            semCriancas.classList.add('hidden');
+            contadorAtivas.textContent = `${sessoesFiltradas.length} Ativas (${filtroBrinquedo})`;
+
+            sessoesFiltradas.forEach(sessao => {
+                const porcetagemRestante = (sessao.tempoRestante / sessao.tempoTotal) * 100;
+                
+                let corBorda = "border-gray-200";
+                let corProgresso = "bg-orange-500";
+                let piscarClasse = "";
+
+                if (sessao.tempoRestante <= 0) {
+                    corBorda = "border-red-500 bg-red-50";
+                    corProgresso = "bg-red-600";
+                    piscarClasse = "animate-pulse text-red-600 font-black";
+                } else if (sessao.tempoRestante <= 60) {
+                    corBorda = "border-amber-400 bg-amber-50";
+                    corProgresso = "bg-amber-500";
+                }
+
+                const card = document.createElement('div');
+                card.className = `card-cronometro bg-white border-2 ${corBorda} rounded-3xl p-5 transition shadow-sm flex flex-col justify-between`;
+                card.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="font-black text-gray-900 text-lg tracking-tight">${sessao.nome}</h3>
+                                <div class="flex flex-wrap gap-2 mt-1">
+                                    <span class="text-xs bg-orange-50 text-orange-700 font-bold px-2.5 py-0.5 rounded-xl flex items-center">
+                                        <i data-lucide="gamepad-2" class="w-3 h-3 mr-1"></i> ${sessao.brinquedo}
+                                    </span>
+                                    <span class="text-xs bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-xl font-black">
+                                        R$ ${sessao.valor.toFixed(2)}
+                                    </span>
+                                </div>
+                            </div>
+                            <button onclick="finalizarSessao(${sessao.id})" class="bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white px-3 py-2 text-xs font-black rounded-xl transition flex items-center space-x-1">
+                                <i data-lucide="check" class="w-4 h-4"></i> <span>Zerar</span>
+                            </button>
+                        </div>
+
+                        <div class="my-5 text-center">
+                            <span class="text-3xl font-mono font-black tracking-widest ${piscarClasse}">
+                                ${sessao.tempoRestante <= 0 ? "FIM DO TEMPO" : formatarTempo(sessao.tempoRestante)}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="w-full bg-gray-100 rounded-full h-2.5 mt-1">
+                        <div class="${corProgresso} h-2.5 rounded-full transition-all duration-1000" style="width: ${Math.max(0, porcetagemRestante)}%"></div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            lucide.createIcons();
+        }
+
+        function renderDashboard() {
+            const totalFaturamento = historico.reduce((acc, curr) => acc + curr.valor, 0);
+            const totalAtendimentos = historico.length;
+            const totalTempo = historico.reduce((acc, curr) => acc + curr.minutosIniciais, 0);
+
+            document.getElementById('dash-faturamento').textContent = `R$ ${totalFaturamento.toFixed(2)}`;
+            document.getElementById('dash-atendimentos').textContent = `${totalAtendimentos} crianças`;
+            document.getElementById('dash-tempo').textContent = `${totalTempo} min`;
+
+            const corpoTabela = document.getElementById('historico-corpo');
+            corpoTabela.innerHTML = '';
+
+            if (historico.length === 0) {
+                corpoTabela.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-gray-400 italic">Nenhum atendimento finalizado na rede.</td></tr>`;
+                return;
+            }
+
+            historico.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-gray-50 hover:bg-gray-50/50 transition text-gray-700";
+                tr.innerHTML = `
+                    <td class="py-3 font-bold">${item.nome}</td>
+                    <td class="py-3 font-medium">${item.brinquedo}</td>
+                    <td class="py-3 font-mono">${item.minutosIniciais} min</td>
+                    <td class="py-3 font-black text-emerald-600">R$ ${item.valor.toFixed(2)}</td>
+                    <td class="py-3"><span class="bg-gray-100 text-gray-600 px-2.5 py-0.5 rounded-xl text-xs font-bold">${item.pagamento}</span></td>
+                `;
+                corpoTabela.appendChild(tr);
+            });
+        }
+
+        setInterval(() => {
+            if (sessoes.length > 0) {
+                sessoes.forEach(sessao => {
+                    if (sessao.tempoRestante > 0) {
+                        sessao.tempoRestante--;
+                    }
+                });
+                renderCards();
+            }
+        }, 1000);
+    </script>
+</body>
+</html>
